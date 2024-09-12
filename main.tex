@@ -1,0 +1,206 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Template for USENIX papers.
+%
+% History:
+%
+% - TEMPLATE for Usenix papers, specifically to meet requirements of
+%   USENIX '05. originally a template for producing IEEE-format
+%   articles using LaTeX. written by Matthew Ward, CS Department,
+%   Worcester Polytechnic Institute. adapted by David Beazley for his
+%   excellent SWIG paper in Proceedings, Tcl 96. turned into a
+%   smartass generic template by De Clarke, with thanks to both the
+%   above pioneers. Use at your own risk. Complaints to /dev/null.
+%   Make it two column with no page numbering, default is 10 point.
+%
+
+% - Munged by Fred Douglis <douglis@research.att.com> 10/97 to
+%   separate the .sty file from the LaTeX source template, so that
+%   people can more easily include the .sty file into an existing
+%   document. Also changed to more closely follow the style guidelines
+%   as represented by the Word sample file.
+%
+% - Note that since 2010, USENIX does not require endnotes. If you
+%   want foot of page notes, don't include the endnotes package in the
+%   usepackage command, below.
+% - This version uses the latex2e styles, not the very ancient 2.09 if
+%   stuff.
+%
+% - Updated July 2018: Text block size changed from 6.5" to 7"
+%
+% - Updated Dec 2018 for ATC'19:
+%
+%   * Revised text to pass HotCRP's auto-formatting check, with
+%     hotcrp.settings.submission_form.body_font_size=10pt, and
+%     hotcrp.settings.submission_form.line_height=12pt
+%
+%   * Switched from \endnote-s to \footnote-s to match Usenix's policy.
+%
+%   * \section* => \begin{abstract} ... \end{abstract}
+%
+%   * Make template self-contained in terms of bibtex entires, to allow
+%     this file to be compiled. (And changing refs style to 'plain'.)
+%
+%   * Make template self-contained in terms of figures, to
+%     allow this file to be compiled. 
+%
+%   * Added packages for hyperref, embedding fonts, and improving
+%     appearance.
+%   
+%   * Removed outdated text.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \documentclass{hotnets22}
+
+% \usepackage{times}  
+% \usepackage{hyperref}
+% \usepackage{titlesec}
+
+% \hypersetup{pdfstartview=FitH,pdfpagelayout=SinglePage}
+
+% \setlength\paperheight {11in}
+% \setlength\paperwidth {8.5in}
+% \setlength{\textwidth}{7in}
+% \setlength{\textheight}{9.25in}
+% \setlength{\oddsidemargin}{-.25in}
+% \setlength{\evensidemargin}{-.25in}
+% \pagestyle{plain} % removes running headers
+
+
+\documentclass[sigplan,10pt,anonymous]{acmart}
+% \documentclass[letterpaper,twocolumn,10pt]{article}
+% \usepackage{usenix}
+\usepackage{adjustbox}
+\usepackage[english]{babel}
+
+\usepackage{blindtext}
+\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference info
+\setcopyright{none}
+\settopmatter{printacmref=false, printccs=false, printfolios=true}
+
+
+% % Copyright
+% \renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference info
+% % Copyright
+% \renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference info
+% \setcopyright{none}
+% \settopmatter{printacmref=false, printccs=false, printfolios=true}
+% % DOI
+% \acmDOI{}
+% % ISBN
+% \acmISBN{}
+% %Conference
+% \acmConference[Submitted for review to SIGCOMM NAIC Workshop]{}
+% \acmYear{2024}
+% %\copyrightyear{}
+% %% {} with no args suppresses printing of the price
+% \acmPrice{}
+
+% to be able to draw some self-contained figs
+\usepackage{tikz}
+\usepackage{amsmath}
+
+% inlined bib file
+\usepackage{filecontents}
+
+% \pagenumbering{roman}
+%\usepackage{times}
+%\usepackage{natbib}
+
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{tikz}
+\usepackage{pifont}
+\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{lipsum}
+%\usepackage{subfigure}
+
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{booktabs}
+
+\usepackage{filecontents}
+\usepackage{xspace}
+% \usepackage{subfig}
+\usepackage{xcolor}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{soul}
+\newtheorem{definition}{Definition}
+\usepackage{array}
+\usepackage{comment}
+\usepackage{listings}
+\usepackage{dsfont}
+\usepackage{algorithmic}
+\usepackage{xurl}
+\usepackage{setspace}
+\usepackage[flushleft]{threeparttable}
+\urlstyle{rm}
+% \usepackage{enumitem}
+\usepackage{enumerate}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{breqn}
+
+
+
+% for table in appendix
+\usepackage{caption}
+\usepackage{ltablex}
+% \usepackage{stfloats}
+
+\usepackage{ifluatex}
+
+\usepackage{outlines}
+% \usepackage{hyperref}
+\newtheorem{insight}{Insight}
+
+%\usepackage{titlesec}
+%\titleformat{\subsubsection}[runin]{\normalfont\normalsize\bfseries}%{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+\newcommand*{\affmark}[1][*]{\textsuperscript{#1}}
+\newcommand*{\affaddr}[1]{#1}
+
+\title{CAIP: Context Aware Iterative Prompting for Router Misconfiguration Detection}
+
+
+% \pagenumbering{gobble}
+
+\author{Xi Jiang, Aaron Gember-Jacobson, Nick Feamster \\
+The University of Chicago, Colgate University}
+% \renewcommand{\shortauthors}{X. Jiang, et al}
+\newcommand{\eg}{{\it e.g.}}
+\newcommand{\ie}{{\it i.e.}}
+\newcommand{\etal}{{\it et al.}}
+\newcommand{\sysname}{{CAIP}}
+\input{macros}
+\input{sec_abstract}
+
+\maketitle
+\pagestyle{plain}
+
+%-------------------------------------------------------------------------------
+\input{sec_intro}
+\input{sec_background}
+\input{sec_method}
+\input{sec_eval}
+\input{sec_future}
+\input{sec_ending}
+% %-------------------------------------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{citations} 
+% \bibliography{\jobname}
+% \clearpage
+
+
+
+\pagebreak
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  LocalWords:  endnotes includegraphics fread ptr nobj noindent
+%%  LocalWords:  pdflatex acks

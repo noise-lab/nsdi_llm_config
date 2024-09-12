@@ -1,0 +1,61 @@
+\section{Evaluation}
+\label{sec:eval}
+To evaluate the effectiveness of \sysname{}, we present three test scenarios as case studies and compare \sysname{} with state-of-the-art solutions. These include:
+\begin{enumerate}
+    \item A comprehensive set of common misconfiguration types, where synthetic misconfigurations representing these types are introduced into collected network configurations.
+    \item A set of real-world misconfigurations verified in actual network configurations.
+    \item An exhaustive run of \sysname{} on the entire configuration file of a medium-scale campus network to assess its ability to identify new misconfigurations.
+    
+We now introduce the setup for our evaluation.
+\end{enumerate}
+\subsection{Evaluation Setup}
+\subsubsection{Context Extraction Hardware Setup}
+
+
+\textit{System Information}: GNU/Linux Red Hat Enterprise Linux release 8.8 (Ootpa);
+
+\textit{CPU Specifications}: Architecture: x86\_64; CPU(s): 32 (2 threads/core, 16 cores/socket, 1 socket); Model: AMD EPYC 7302P 16-Core Processor; Max MHz: 3000.000; L3 cache: 16384K; NUMA node0 CPU(s): 0-31 
+
+We opt not to use the GPU, as the computational cost of the context extraction and processing tasks was manageable on the CPU. The detailed resource profiling shows that the tasks primarily benefit from parallel CPU threads, and GPU acceleration would not provide significant additional speedup.
+
+
+\subsubsection{LLM Model Used: GPT-4o} For running the LLM-based detection, we use GPT-4o, OpenAI's most advanced transformer-based model designed for complex multi-step tasks.
+\textit{Model Specifications}:
+\begin{itemize}
+    \item Model: GPT-4o-2024-05-13
+    \item Context window: 128,000 tokens 
+    \item Max output tokens: 4,096 tokens
+    \item Training data Up to October 2023
+\end{itemize}
+
+\subsubsection{Prompting and Query Setup}
+We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration file to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (e.g., syntax issues, policy conflicts) or general misconfigurations. Example prompting, queries, and responses are shown in Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}.
+
+\subsection{Case Study 1: Synthetic Misconfiguration Detection}
+In this case study, we broadly categorize router misconfigurations into three types: (1) syntax errors, (2) range violations, and (3) dependency/conflict issues.
+\begin{itemize}
+    \item \textit{Syntax errors} occur when the configuration syntax does not adhere to the expected format or structure. For example, a missing bracket or misused keyword in a BGP routing policy.
+    \item \textit{Range violations} involve parameter values that fall outside the acceptable range. An example would be an MTU value that exceeds the maximum allowed for a specific interface type.
+    \item \textit{Dependency/conflict} issues arise when different configuration lines are incompatible or contradict each other. For instance, a firewall rule might block traffic that another policy explicitly permits.
+\end{itemize}
+
+To evaluate \sysname{}, we first obtain snapshot configurations from Internet2 (Juniper devices) and introduce synthetic misconfigurations representing the three types. For each type, we create four distinct misconfigurations, resulting in a total of 12 misconfigurations. For each misconfiguration, we run \sysname{} by following the two components: (1) treating the misconfigured line as the line under review and extracting all relevant context, and (2) conducting the iterative, sequential prompting process against the model, obtaining the final misconfiguration detection decision.
+
+When forming the prompt, we explicitly instruct the model to look for each type of misconfiguration—syntax, range, or dependency/conflict—individually. This is because the model may request different types of context depending on the specific misconfiguration type it is trying to detect. We report only the results corresponding to the actual misconfiguration type introduced. Importantly, \sysname{} never yielded false positives when the model was instructed to find a misconfiguration type different from the actual type. Additionally, we find that asking the model to search for `general' misconfigurations also led to successful detection, though more context was often requested by the model.
+
+As a baseline, we compare \sysname{} to three representative tools: \textit{Batfish}, a model-checking tool, \textit{Diffy}, a data-mining-based tool, and a partition-based GPT Q\&A model using GPT-4o for fair comparison. We present the specific misconfigurations introduced and the results in Table X, demonstrating how each tool performed in detecting the synthetic misconfigurations across the three categories.
+
+\subsection{Case Study 2: Real-World Misconfiguration Detection}
+To reflect real-world misconfigurations, we obtain Juniper router configuration snapshots from a campus network where known misconfigurations regarding port assignment have been found using their graph-based verifier. We instruct the model to detect 'general' misconfigurations when prompting.
+
+A key aspect of this case study is the demonstration of \sysname{}'s flexibility in integrating additional context types under different scenarios. For example, port assignment misconfigurations often require a network-wide view, as they often can only be accurately identified when the context of other devices within the same network is considered. To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context.' This context type mines and evaluates the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous.
+Example Intra-Router Consistency Context extracted:
+
+\textit{`For the Configuration Line Under Review, the same configuration is found in 189 out of 191 other configuration files. (Significantly lower prevalence may indicate an uncommon or potentially erroneous configuration.'}
+
+We evaluate \sysname{}'s performance on these misconfigured lines and compare the results to the original graph-based verifier, \textit{Batfish}, and the partition-based GPT Q\&A model. The comparison of results is presented in Table X.
+
+\subsection{Case Study 3: Large-Scale Network Misconfiguration Detection}
+Lastly, we obtain Aruba router configuration snapshots from a medium-sized campus network. Unlike the previous scenarios, this dataset does not contain ground truth misconfigurations. The objective here is twofold: (1) to verify the scalability of \sysname{} when applied to larger network configurations, and (2) to investigate whether \sysname{} can detect potential misconfigurations that have not yet been identified by existing tools.
+
+We perform an exhaustive analysis using \sysname{} across five full configuration files, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify 'general' misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table X, highlighting \sysname{}'s ability to uncover new misconfigurations.
