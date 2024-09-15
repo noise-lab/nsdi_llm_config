@@ -169,7 +169,7 @@ Example: For the parameter Timeout, where values like 1000, 2000, and 3000 are u
 By combining existence-based checks with a majority-voting mechanism, we can effectively differentiate between pre-defined and user-defined parameter values in network configurations. This method ensures that the context extracted for LLM analysis is both relevant and accurate, thereby enhancing performance and reducing computational costs. Moreover, this approach maintains consistency within the configuration, ensuring that similar parameters are uniformly treated across different contexts.
 
 
-\subsection{Iterative Prompting}\label{mining_method}
+\subsection{Iterative Prompting}\label{prompting_method}
 As we transition from context mining to utilizing the extracted information in LLM prompts, the next challenge is how to feed this information into the model without overwhelming it. While extracting accurate and relevant context is essential, the model's ability to process that information effectively is just as crucial. A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information at once, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
 
 \subsubsection{Challenge 3 - Context Overload in Prompting}

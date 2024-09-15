@@ -1,2 +1,8 @@
 \section{Discussion and Future Work}
 \label{sec:future}
+
+\sysname{} has proven effective in improving the detection of router misconfigurations, but there are several avenues for further exploration and refinement. One notable challenge is expanding the framework to better handle large-scale, distributed networks with interdependent routers. These environments often involve complex relationships between devices, and future work could focus on extending \sysname{} to capture and analyze multi-device contexts by default. Incorporating cross-router consistency checks and advanced network-wide policy validation could be valuable enhancements.
+
+Another area for improvement is enhancing the LLM's ability to process real-time configuration changes. As networks evolve dynamically, incorporating real-time monitoring data into the context mining process would allow for continuous verification and faster misconfiguration detection. Integrating \sysname{} with network management tools that track operational metrics could provide valuable runtime data, further improving detection accuracy by correlating live data with configuration snapshots.
+
+Lastly, improving the interpretability and transparency of LLM decisions in \sysname{} is an area for future work. Providing clearer explanations for why certain misconfigurations are flagged could assist network operators in quickly understanding and addressing potential issues. Combining LLM-based reasoning with rule-based approaches might provide a more robust system that blends the strengths of both methodologies, offering accurate detection alongside actionable insights.
