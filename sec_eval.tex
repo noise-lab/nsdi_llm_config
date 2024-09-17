@@ -3,8 +3,8 @@
 To evaluate the effectiveness of \sysname{}, we present two test scenarios as case studies and compare \sysname{} with state-of-the-art solutions. These include:
 
 \begin{enumerate}
-    \item \textit{Synthetic Change Verification}: Synthetic modifications are introduced into real network configuration snapshots to simulate potential operator-introduced changes (both correct and incorrect). We run \sysname{} on these specific configurations changes evaluate the model’s ability to accurately infer and detect misconfigurations.
-    \item \textit{Comprehensive Real Configuration Snapshot Verification}: \sysname{} is run exhaustively on configuration snapshots from a medium-scale campus network to detect overlooked misconfigurations in a real-world setting. This covers both \textit{targeted} misconfiguration detection, where we focused on known issues like VLAN port assignment errors, and \textit{non-targeted} detection, which involved scanning for general misconfigurations without prior knowledge of the issues.
+    \item \textit{Synthetic Change Verification}: Synthetic modifications are introduced into real network configuration snapshots to simulate potential operator-introduced changes (both correct and incorrect). We run \sysname{} on these specific configurations changes to evaluate the model’s ability to accurately infer and detect misconfigurations.
+    \item \textit{Comprehensive Real Configuration Snapshot Verification}: \sysname{} is run on configuration snapshots from a medium-scale campus network to detect overlooked misconfigurations in a real-world setting. This covers both \textit{targeted} misconfiguration detection, where we focused on known issues like VLAN assignment errors, and \textit{non-targeted} detection, which involved scanning for general misconfigurations without prior knowledge of the issues.
 \end{enumerate}
 
 We now introduce the setup for our evaluation and present the details of the case studies in the subsequent sections.
@@ -53,29 +53,43 @@ We broadly categorize router misconfigurations into three types: (1) syntax erro
 \textbf{Type} & \textbf{Description} & \textbf{Misconfig} & \textbf{Requested Context}\\ \hline
 
 \multirow{4}{*}{\textbf{Syntax}} 
-& Missing brace &..."interfaces": \{"\textcolor{red}{<ge-*"}: & None\\ \cline{2-4}
-& Invalid keyword & ..."mtu": \textcolor{red}{"True"}   & \( N(P) \), \( R(P) \)\\ \cline{2-4}
-& Incorrect hierarchy & ..."host-name": \textcolor{red}{"\{rtsw.alba-re1\}"}  & \( N(P) \)\\ \cline{2-4}
-& Invalid IP address & ..."neighbor \textcolor{red}{192.168.253.1.1}" & \( N(P) \), \( R(P) \)\\ \hline
+& Missing brace &...interfaces: \{\textcolor{red}{"<ge-*"}: & None\\ \cline{2-4}
+& Invalid keyword & ...mtu: \textcolor{red}{"True"}   & \( N(P) \), \( R(P) \)\\ \cline{2-4}
+& Incorrect hierarchy & ...host-name: \textcolor{red}{"\{rtsw.alba-re1\}"}  & \( N(P) \)\\ \cline{2-4}
+& Invalid IP address & ...neighbor: \textcolor{red}{192.168.253.1.1}" & \( N(P) \), \( R(P) \)\\ \hline
 
 \multirow{4}{*}{\textbf{Range}}  
-& Invalid MTU & ..."mtu": \textcolor{red}{"10000"}  & \( N(P) \), \( R(P) \)\\ \cline{2-4}
-& Invalid VLAN ID & ..."vlan-id": \textcolor{red}{"5000"}  & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
-& Invalid AS & ..."autonomous-system \textcolor{red}{70000} & \( N(P) \), \( R(P) \) \\ \cline{2-4}
-& Invalid prefix limit & ..."maximum": \textcolor{red}{"200000"} & \( N(P) \), \( R(P) \)  \\ \hline
+& Invalid MTU & ...mtu: \textcolor{red}{"10000"}  & \( N(P) \), \( R(P) \)\\ \cline{2-4}
+& Invalid VLAN ID & ...vlan-id: \textcolor{red}{"5000"}  & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
+& Invalid AS & ...autonomous-system: \textcolor{red}{70000} & \( N(P) \), \( R(P) \) \\ \cline{2-4}
+& Invalid prefix limit & ...maximum: \textcolor{red}{"200000"} & \( N(P) \), \( R(P) \)  \\ \hline
 
-\multirow{4}{*}{\textbf{D/C}}  
+\multirow{8}{*}{\textbf{D/C}}  
 & Non-existent group & ... apply-groups: \textcolor{red}{"L2-LSP-ATTRIBUTES”} & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
 & Policy Conflict & ...community \textcolor{red}{add I2CLOUD-EXTENDED-TARGET}  & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
 & Non-existent filter & ...input-list: \textcolor{red}{"uplink"} & \( N(P) \), \( R(P) \)  \\ \cline{2-4}
-& Non-existent policy & ..."export": \textcolor{red}{"OESS-400-300-LOOP} & \( R(P) \)  \\ \hline
-
+& Non-existent policy & ...export: \textcolor{red}{"OESS-400-300-LOOP} & \( R(P) \)  \\ \cline{2-4}
+& Incorrect Filter Usage & ...family mpls: filter:input-list:\textcolor{red}{"v6filter"} & \( R(P), S(P) \)  \\ \cline{2-4}
+& Disabled Sampling & ...family inet6: \textcolor{red}{SAMPLING MISSING/DISABLED}& \( R(P), N(P) \)  \\ \cline{2-4}
+& VRF Target Conflict & ...vrf-target target:11537:\textcolor{red}{"313001"}& \( S(P) \)  \\ \cline{2-4}
+& Abnormal Small MTU & ...family iso: mtu: \textcolor{red}{"1497"}& \( R(P), S(P) \)  \\ \hline
 \end{tabular}
 \label{tab:syn_configs}
 }
 \end{table}
 
-To evaluate \sysname{}, we first obtain snapshot configurations from Internet2 (Juniper devices) and introduce synthetic misconfigurations representing the three types. For each type, we create four distinct misconfigurations, resulting in a total of 12 misconfigurations as shown in Table~\ref{tab:syn_configs}. For each misconfiguration, we run \sysname{} by following the two components: (1) treating the misconfigured line as the line under review and extracting all relevant context, and (2) conducting the iterative, sequential prompting process against the model, obtaining the final misconfiguration detection decision.
+
+% The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6.
+
+% IPv4 (family inet) and MPLS (family mpls) have sampling enabled in neighboring configurations, but IPv6 (family inet6) does not. This inconsistency in sampling configurations across different protocol families can cause issues in traffic monitoring and troubleshooting, as some traffic will be sampled and other traffic will not.
+
+% The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN. The mismatch between the RD and VRF target can cause routing and forwarding inconsistencies, as the control plane may attempt to map traffic to the wrong VPN instance.
+
+% To evaluate \sysname{}, we first obtain snapshot configurations from Internet2 (Juniper devices) and sampled 16 configuration lines known to be correct. We then modify these configuration lines to introduce synthetic erros representing the three types of misconfigurations. For syntax and range misconfiguration types, we create four distinct misconfigurations for each, resulting in a total of 8 misconfigurations as shown in Table~\ref{tab:syn_configs}. For D/C misconfiguration type, we introduce 8 distinct errors because LLMs are inherently good at distinguishing syntax and range issues within configuration as we previous discussed but \sysname{} enables the discovery of more nuanced D/C issues through context mining and so we introduce more of these errors to verify these. 
+
+
+To evaluate \sysname{}, we obtain snapshot configurations from Internet2 (Juniper devices) and sampled 16 correct configuration lines. These were then modified to introduce synthetic errors across three misconfiguration types: syntax, range, and dependency/conflict (D/C). For syntax and range errors, we created four distinct misconfigurations each, totaling 8 errors (see Table~\ref{tab:syn_configs}). For D/C misconfigurations, we introduced 8 distinct errors, as vanilla LLMs excel at detecting syntax and range issues, while \sysname{}’s context mining is particularly effective at uncovering nuanced D/C issues. The additional D/C errors allow us to thoroughly assess this capability.
+For each misconfiguration, we run \sysname{} by following the two components: (1) treating the misconfigured line as the line under review and extracting all relevant context, and (2) conducting the iterative, sequential prompting process against the model, obtaining the final misconfiguration detection decision.
 
 When forming the prompt, we explicitly instruct the model to look for each type of misconfiguration—syntax, range, or dependency/conflict—individually. This is because the model may request different types of context depending on the specific misconfiguration type it is trying to detect. We report only the results corresponding to the actual misconfiguration type introduced. Importantly, \sysname{} never yielded false positives when the model was instructed to find a misconfiguration type different from the actual type. Additionally, we find that asking the model to search for `GENERAL' misconfigurations also led to successful detection, though more context was often requested by the model.
 
@@ -89,24 +103,27 @@ As a baseline, we compare \sysname{} to three representative tools: \textit{Batf
 \hline
 \multirow{2}{*}{\textbf{Type}} & \multirow{2}{*}{\textbf{Cases}} & \multicolumn{4}{c|}{\textbf{Number of Corrected Detected Cases}} \\ \cline{3-6} 
 &                                & \textbf{\sysname{}} & \textbf{Ciri} & \textbf{Batfish} & \textbf{Diffy} \\ \hline
-Range & 4 & 4/4 (100\%) & 2/4 (50\%) & 0/4 (0\%) & 0/4 (0\%) \\ \hline
-D/C & 4 & 4/4 (100\%) & 0/4 (0\%) & 2/4 (50\%) & 0/4 (0\%) \\ \hline
-Correct Configs& 10 & 10/10 (100\%) & 10/10 (100\%) & 10/10 (100\%) & 10/10 (100\%) \\ \hline
-\textbf{Total} & \textbf{22} & \textbf{22/22 (100\%)} & \textbf{14/22 (63.6\%)} & \textbf{15/22 (68.2\%)} & \textbf{10/22 (45.5\%)} \\ \hline
+Syntax Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 3/4 (75\%) & 0/4 (0\%) \\ \hline
+Range Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 0/4 (0\%) & 0/4 (0\%) \\ \hline
+D/C Error& 8 & 8/8 (100\%) & 1/8 (12.5\%) & 2/8 (25\%) & 0/8 (0\%) \\ \hline
+\multirow{2}{*}{\makecell[{{l}}]{Original Configs\\ (No Error)}}& \multirow{2}{*}{\makecell[{{l}}]{12}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} \\ 
+&  &  &  &  &  \\ \hline
+\textbf{Total} & \textbf{32} & \textbf{32/32 (100\%)} & \textbf{21/32 (65.6\%)} & \textbf{21/32 (65.6\%)} & \textbf{16/32 (50\%)} \\ \hline
 \end{tabular}
 \label{tab:syn_result}
 }
 \end{table}
-\chase{run more dc issues}
 
-The results in Table~\ref{tab:syn_result} demonstrate that \sysname{} outperforms the other tools in detecting all three types of misconfigurations. It achieves a perfect 12/12 detection rate across the board. This indicates that \sysname{}'s comprehensive context mining and iterative prompting process effectively identify errors in network configurations, even in more complex cases like D/C issues. In contrast, the other tools showed limitations, particularly when it came to detecting range violations and D/C issues.
+The results in Table~\ref{tab:syn_result} demonstrate that \sysname{} outperforms the other tools in detecting all three types of misconfigurations. It achieves a perfect 16/16 detection rate across the board for misconfigurations. This indicates that \sysname{}'s comprehensive context mining and iterative prompting process effectively identify errors in network configurations, even in more complex cases like D/C issues. In contrast, the other tools showed limitations, particularly when it came to detecting range violations and D/C issues.
 
 % \sysname{}'s ability to accurately mine relevant context and apply it in sequential prompts gave it a distinct advantage over the other methods, which either rely on hardcoded rules (Batfish) or predefined patterns (Diffy).
 
 \paragraph{Comparison Against Partition-based LLMs} The partition-based GPT model Ciri performs reasonably well in detecting syntax and range violations, with a detection rate of 50\% for both categories.
 This success is due to the LLM model's training on vast, diverse text, including network-related documentation and configuration files, enabling it to recognize common syntax structures and numerical limits typically found in configurations. Transformer-based LLMs, with their self-attention mechanism, are particularly effective at identifying these common, localized issues.
-However, it lags significantly behind \sysname{} in detecting D/C issues, with a 0\% detection rate in this category. The primary reason for this underperformance is the partitioning approach. This approach analyzes configuration sections in isolation, failing to capture the complex interdependencies between configuration lines, which is crucial for detecting D/C issues. 
-As shown in Table~\ref{tab:syn_configs} and ~\ref{tab:syn_responses}, D/C issues, such as policy conflicts, require the model to understand and analyze interactions between different configuration elements. \sysname{} addresses this by guiding the LLM to request the relevant contextual information it needs for accurate reasoning and detection. In contrast, partition-based GPT struggles to detect such misconfigurations effectively, as it analyzes configurations in isolation and misses these complex interdependencies.
+However, it lags significantly behind \sysname{} in detecting D/C issues, with a 12.5\% detection rate in this category. The primary reason for this underperformance is the partitioning approach. This approach analyzes configuration sections in isolation, failing to capture the complex interdependencies between configuration lines, which is crucial for detecting D/C issues. The only D/C misconfiguration that Ciri successfully detects is the `VRF Target Conflict,' where the conflicting `route-distinguisher' value configuration happens to be in the same prompt partition, providing just enough context for accurate detection.
+
+As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues, such as policy conflicts, require the model to understand and analyze interactions between different configuration elements.
+\sysname{} addresses this by guiding the LLM to request the relevant contextual information it needs for accurate reasoning and detection. The example \sysname{}-enable LLM responses in Table~\ref{tab:syn_responses} clearly showcase that these contexts are being leveraged to derive the correct misconfiguration detection results. In contrast, partition-based GPT struggles to detect such misconfigurations effectively, as it analyzes configurations in isolation and can often miss these complex interdependencies.
 
 \begin{table}[ht]
 \centering
@@ -118,29 +135,46 @@ As shown in Table~\ref{tab:syn_configs} and ~\ref{tab:syn_responses}, D/C issues
 
 \multirow{3}{*}{\textbf{Syntax}} & \multirow{3}{*}{Missing brace} & \multirow{3}{*}{["<ge-*>"]} & "MTU value for 'family inet' is set to 9174 which is less than the interface MTU value of 9192. The MTU for 'family inet' should not be less than the interface MTU."\\\hline
 
-\multirow{4}{*}{\textbf{Range}} & \multirow{3}{*}{Invalid VLAN ID} & \multirow{3}{*}{["maximum"]} & "The 'maximum' value of 200000 in the configuration line under review significantly exceeds the 'maximum' values of 1000 found in similar configuration lines, indicating a potential range misconfiguration."\\\hline
+\multirow{4}{*}{\textbf{Range}} & \multirow{4}{*}{Invalid VLAN ID} & \multirow{3}{*}{["maximum"]} & "The 'maximum' value of 200000 in the configuration line under review significantly exceeds the 'maximum' values of 1000 found in similar configuration lines, indicating a potential range misconfiguration."\\\hline
 
-\multirow{5}{*}{\textbf{D/C}} & \multirow{5}{*}{Policy Conflict} & \multirow{5}{*}{[" remove-comms-rt"]} & "There is a conflict in the configuration under term 'remove-comms-rt' where the action 'community add I2CLOUD-EXTENDED-TARGET' is followed by 'community delete I2CLOUD-EXTENDED-TARGET' which are contradictory actions."\\\hline
+\multirow{20}{*}{\textbf{D/C}} & \multirow{5}{*}{Policy Conflict} & \multirow{5}{*}{["remove-comms-rt"]} & "There is a conflict in the configuration under term 'remove-comms-rt' where the action 'community add I2CLOUD-EXTENDED-TARGET' is followed by 'community delete I2CLOUD-EXTENDED-TARGET' which are contradictory actions."\\\cline{2-4}
 
+ & \multirow{5}{*}{Disabled Sampling} & \multirow{5}{*}{["inet6"]} & "The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6."\\\cline{2-4}
+ & \multirow{5}{*}{VRF Target Conflict} & \multirow{5}{*}{["target"]} & "The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN."\\\cline{2-4}
+ & \multirow{5}{*}{Incorrect Filter Usage} & \multirow{5}{*}{["input-list"]} & "The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6."\\\hline
 \end{tabular}
 \label{tab:syn_responses}
 }
 \end{table}
 
-\chase{put detailed responses for each in appendix}
-\paragraph{Comparison Against Non-LLM-based Tools} Batfish performs well on syntax errors (75\% detection rate) but struggles with range violations and only partially detected D/C issues. This can be attributed to the fact that Batfish uses a rule-based model checker, which excels in detecting predefined syntax errors but is less effective in handling misconfigurations that involve contextual nuances, such as range violations or dependency conflicts. Specifically, Batfish is able to detect issues related to non-existent groups and policies (hardcoded into its rule checks) but missed more subtle D/C misconfigurations, like policy conflicts or filter dependencies. These require deeper context analysis, which Batfish lacks due to its reliance on static rules.
+% The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6.
 
-Diffy performs poorly across all misconfigruations, with a 0/12 detection rate, due to its data-driven approach, which focuses on learning common usage patterns from configurations and flagging anomalies as potential bugs. While effective for detecting clear deviations from established norms, Diffy struggles with context-dependent or subtle misconfigurations, such as dependency/conflict (D/C) issues, that require a deeper understanding of configuration context and dependencies. Complex issues like policy conflicts or range violations may not deviate from typical patterns but still be incorrect, which Diffy’s template-based anomaly detection cannot capture. Furthermore, Diffy's reliance on identifying deviations from learned patterns makes it less effective at detecting syntax errors and range violations. These types of misconfigurations often follow standard formatting and numerical values that may not stand out as anomalies, making them difficult for Diffy's approach to detect without a granular understanding of configuration structure and constraints.
+% IPv4 (family inet) and MPLS (family mpls) have sampling enabled in neighboring configurations, but IPv6 (family inet6) does not. This inconsistency in sampling configurations across different protocol families can cause issues in traffic monitoring and troubleshooting, as some traffic will be sampled and other traffic will not.
 
-Lastly, despite varying performance in detecting misconfigurations, all tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully identified all correctly configured lines as valid, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
+% The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN. The mismatch between the RD and VRF target can cause routing and forwarding inconsistencies, as the control plane may attempt to map traffic to the wrong VPN instance.
+
+\paragraph{Comparison Against Non-LLM-based Tools}
+Batfish performs well on syntax errors (75\% detection rate) but struggles
+with range violations and only partially detected D/C issues (2/8).
+This can be attributed to the fact that Batfish uses a rule-based model checker, which excels in detecting predefined
+syntax errors but is less effective in handling misconfigurations that involve contextual nuances, such as range violations or dependency conflicts. Specifically, Batfish is able
+to detect issues related to non-existent groups and policies
+(hard-coded into its rule checks) but missed more subtle D/C
+misconfigurations, like policy conflicts or filter dependencies.
+
+Diffy performs poorly across all misconfigurations, with a 0/16 detection rate, due to its data-driven approach, which focuses on learning common usage patterns from configurations and flagging anomalies as potential bugs. While effective for detecting clear deviations from standard patterns in other configuration files,
+% Diffy struggles with context-dependent or subtle misconfigurations, such as dependency/conflict (D/C) issues, that require a deeper understanding of configuration context and dependencies. 
+complex issues like policy conflicts or range violations may not deviate from typical patterns but still be incorrect, which Diffy’s template-based anomaly detection cannot capture. Furthermore, Diffy's reliance on identifying deviations from learned patterns makes it less effective at detecting syntax errors and range violations. These types of misconfigurations often follow standard formatting and numerical values that may not stand out as anomalies, making them difficult for Diffy's approach to detect without a granular understanding of configuration structure and constraints.
+
+Lastly, despite varying performance in detecting misconfigurations, all tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully identified all correctly configured lines prior to the introducing of the synthetic errors as valid, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
 
 \subsection{Case Study 2: Comprehensive Real Configuration Snapshot Verification}
 To evaluate \sysname{} on real-world misconfiguration detection, we obtain Aruba router configuration snapshots from a medium-scale campus network. The objective here is twofold: (1) to verify the scalability of \sysname{} when applied to larger network configurations, and (2) to investigate whether \sysname{} can detect potential misconfigurations that have not yet been identified by existing tools.
 
 
 In this case study, we perform two types of analysis, beginning with \textit{targeted misconfiguration detection:} A key aspect of this case study is the demonstration of \sysname{}'s flexibility in integrating additional context types under different scenarios. This is particularly useful when network operators have prior domain knowledge about specific misconfigurations they are trying to detect that fall outside of \sysname{}'s default context library.
-To illustrate this flexibility, we consult the network operators who provided the configuration snapshots. They were specifically interested in detecting incorrect `VLAN port assignments' --- a type of misconfiguration that often requires a network-wide view. Such misconfigurations are usually identifiable only when considering the configurations of other devices in the same network, as deviations from uniform configurations can indicate potential issues.
-To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context'.  This context type mines  the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous. For this scenario, we modified the initial prompt to focus specifically on detecting `WRONG PORT ASSIGNMENT'.
+To illustrate this flexibility, we consult the network operators who provided the configuration snapshots. They were specifically interested in detecting incorrect `VLAN assignments' --- a type of misconfiguration that often requires a network-wide view. Such misconfigurations are usually identifiable only when considering the configurations of other devices in the same network, as deviations from uniform configurations can indicate potential issues.
+To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context'.  This context type mines  the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous. For this scenario, we modified the initial prompt to focus specifically on detecting `WRONG VLAN ASSIGNMENT'.
 
 Example Intra-Router Consistency Context extracted:
 
@@ -149,13 +183,13 @@ Example Intra-Router Consistency Context extracted:
 The second analysis involves \textit{non-targeted misconfiguration detection}, where \sysname{} uses its default context library to aim the LLM for detecting general misconfigurations without prior knowledge of specific issues. In this mode, no specific misconfiguration type is provided to the model; instead, \sysname{} exhaustively analyzes the entire configuration file to identify `GENERAL' errors. 
 This approach is particularly valuable for detecting overlooked misconfigurations in large, complex network environments where errors may not be immediately obvious or anticipated. By running \sysname{} in this mode, we assess its ability to detect subtle misconfigurations across the network without predefined expectations, ensuring it can operate effectively even when network operators are unsure of the specific issues they might face.
 
-We perform exhaustive analysis using \sysname{} across 11 full configuration files, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify the corresponding misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table~\ref{tab:real_results}, highlighting \sysname{}'s ability to uncover new misconfigurations. For each of misconfigurations detected by \sysname{}, we verify the correctness of the inference decision with domain experts. 
+We perform exhaustive analysis using \sysname{} across 11 full configuration files covering $\sim6\%$ of all devices on the campus network, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify the corresponding misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table~\ref{tab:real_results}, highlighting \sysname{}'s ability to uncover new misconfigurations. For each of misconfigurations detected by \sysname{}, we verify the correctness of the inference decision with domain experts. 
 
 \paragraph{Targeted Analysis} 
-In the non-targeted analysis, \sysname{} demonstrates consistent performance
-in identifying misconfigurations related to incorrect port assignments. Out of the six misconfigurations detected, \sysname{} correctly flags two with a true positive rate (TPR) of 33.3\%. The identified misconfigurations involved wrong router port assignments that caused misrouting and access issues, a high-severity problem for network operations.
+In the targeted analysis, \sysname{} demonstrates consistent performance
+in identifying misconfigurations related to incorrect VLAN assignments. Out of the six misconfigurations detected, \sysname{} correctly flags two with a true positive rate (TPR) of 33.3\%. The identified misconfigurations involved wrong VLAN assignments that caused misrouting and access issues, a high-severity problem for network operations.
 
-Despite the modest TPR, the false positives align with the domain experts' expectations. Network experts clarified the port assignment deviations falsely flagged as misconfigurations are in fact intentional modifications tailored to the specific routers within the network. In this regard, we compare \sysname{}'s detection results (both true and false positives) with those from the experts' internal tool—a graph-based, non-LLM solution designed to check intra-router consistency— and the results are consistent.
+Despite the modest TPR, the false positives align with the domain experts' expectations. Network experts clarified the VLAN assignment deviations falsely flagged as misconfigurations are in fact intentional modifications tailored to the specific routers within the network. In this regard, we compare \sysname{}'s detection results (both true and false positives) with those from the experts' internal tool—a graph-based, non-LLM solution designed to check intra-router consistency— and the results are consistent.
 Thus, while the false positives may appear significant, they represent deviations from standard configurations that would typically signal errors, but in these cases, are expected and intentional adjustments.
 
 
@@ -167,17 +201,17 @@ Thus, while the false positives may appear significant, they represent deviation
 \hline
 \multirow{2}{*}{\makecell[{{l}}]{\textbf{Analysis} \\ \textbf{Type}}} & \multirow{2}{*}{\makecell{\textbf{Misconfigs}}} & \multirow{2}{*}{\makecell{\textbf{Count}}} &  \multirow{2}{*}{\makecell{\textbf{Severity (Reason)}}} &\multirow{2}{*}{\makecell[{{l}}]{\textbf{True Positive}\\ \textbf{Rate (TPR)}}}\\
 &&&& \\\hline
-\multirow{2}{*}{\makecell[{{l}}]{Non-\\Targeted}} &\multirow{2}{*}{\makecell[{{l}}]{Incorrect Port\\Assignment}} & \multirow{2}{*}{\makecell{6}} & 
-\multirow{2}{*}{\makecell[{{l}}]{\textit{High}: Wrong router port assignments, causing\\misrouting and access issues.}} & \multirow{2}{*}{\makecell{2/6 (33.3\%)}}\\ 
+\multirow{2}{*}{\makecell[{{l}}]{\textbf{Targeted}}} &\multirow{2}{*}{\makecell[{{l}}]{Wrong VLAN\\Assignment}} & \multirow{2}{*}{\makecell{6}} & 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{High}: Wrong VLANs permitted in configuration, causing\\access issues.}} & \multirow{2}{*}{\makecell{2/6 (33.3\%)}}\\ 
 &&&& \\\hline
-\multirow{8}{*}{\makecell{Targeted}} &\multirow{2}{*}{\makecell[{{l}}]{Invalid Subnet\\ Mask}} & \multirow{2}{*}{\makecell{2}} & 
+\multirow{8}{*}{\makecell[{{l}}]{Non-\\Targeted}} &\multirow{2}{*}{\makecell[{{l}}]{Invalid Subnet\\ Mask}} & \multirow{2}{*}{\makecell{2}} & 
 % \multirow{2}{*}{\makecell{\textit{High}: Unconventional subnet mask usage (255.255.\\253.0), violating binary boundary rules.}} 
 \multirow{2}{*}{\makecell[{{l}}]{\textit{High}: Subnet mask usage, \eg, 255.255.253.0) \\violating binary boundary rules.}} 
 & \multirow{2}{*}{\makecell{2/2 (100\%)}}\\ 
 &&&& \\\cline{2-5}
 
  &\multirow{2}{*}{\makecell[{{l}}]{Inconsistent \\Policy Naming}} & \multirow{2}{*}{\makecell{14}} & 
-\multirow{2}{*}{\makecell[{{l}}]{\textit{Moderate}: Misnamed `smnpread' for `snmp\\_communities',but with consistent usage.}} & \multirow{2}{*}{\makecell{14/14 (100\%)}}\\ 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{Low}: Misnamed `smnpread' for `snmp\\_communities',but with consistent usage.}} & \multirow{2}{*}{\makecell{14/14 (100\%)}}\\ 
 &&&& \\\cline{2-5}
  &\multirow{2}{*}{\makecell[{{l}}]{Insecure SSH \\KEX Algorithm}} & \multirow{2}{*}{\makecell{1}} & 
 \multirow{2}{*}{\makecell[{{l}}]{\textit{Low}: Insecure `diffie-hellman-group14-sha1' used\\(low risk as stronger algorithms are included).}} & \multirow{2}{*}{\makecell{1/1 (100\%)}}\\ 
@@ -197,9 +231,9 @@ In the non-targeted analysis, \sysname{} was able to detect several types of mis
 The detected misconfigurations were categorized by severity based on their potential impact on network operations:
 \begin{itemize}
     \item \textit{High Severity}: Misconfigurations in this category pose critical risks to the network and require immediate action --- \sysname{} identified invalid subnet mask (e.g., 255.255.253.0) usages that violate binary boundary rules, which could lead to routing issues and network instability.
-    \item \textit{Moderate Severity}: These issues may not immediately disrupt network operations but should be addressed to ensure optimal functionality ---
-    \sysname{} identified many instances of misnamed configurations (\eg, `snmpread' instead of `snmpread' for `snmp\_communities') which do not break the system but could lead to confusion and maintenance challenges.
-    \item \textit{Low Severity}: These issues present a potential risk but are not critical ---  \sysname{} identified the use of an insecure SSH KEX algorithm (`diffie-hellman-group14-sha1'), which, while outdated, still allows secure communications through stronger algorithms present in the configuration.
+    \item \textit{Low Severity}: These issues may not immediately disrupt network operations but should be addressed to ensure optimal functionality and avoid potential risks---
+    \sysname{} identified many instances of misnamed configurations (\eg, `smnpread' instead of `snmpread' for `snmp\_communities') and inclusion of insecure SSH KEX algorithm which (`diffie-hellman-group14-sha1'), do not break the system but could lead to confusion and maintenance challenges.
+    % \item \textit{Low Severity}: These issues present a potential risk but are not critical ---  \sysname{} identified the use of an insecure SSH KEX algorithm (`diffie-hellman-group14-sha1'), which, while outdated, still allows secure communications through stronger algorithms present in the configuration.
     \item \textit{Ambiguous}: These misconfigurations are related to configurations that lead to undefined or nondeterministic behaviors --- \sysname{} found ambiguous rate limit values (`interval' and `burst' set to 0), which can cause unpredictable performance issues due to missing documentation on how these values should be handled, suggesting updates or further specifications in the documentation are needed.
 \end{itemize}
 
