@@ -18,7 +18,7 @@ We now introduce the setup for our evaluation and present the details of the cas
 
 \textit{CPU Specifications}: Architecture: x86\_64; CPU(s): 32 (2 threads/core, 16 cores/socket, 1 socket); Model: AMD EPYC 7302P 16-Core Processor; Max MHz: 3000.000; L3 cache: 16384K; NUMA node0 CPU(s): 0-31 
 
-We opt not to use the GPU, as the computational cost of the context extraction and processing tasks was manageable on the CPU. The detailed resource profiling shows that the tasks primarily benefit from parallel CPU threads, and GPU acceleration would not provide significant additional speedup.
+We opt not to use the GPU, as the computational cost of the context extraction and processing tasks was manageable on the CPU --- the tasks primarily benefit from parallel CPU threads, and GPU acceleration would not provide significant additional speedup.
 
 
 \subsubsection{LLM Model Used: GPT-4o} For running the LLM-based detection, we use GPT-4o, OpenAI's most advanced transformer-based model designed for complex multi-step tasks.
@@ -34,19 +34,17 @@ We opt not to use the GPU, as the computational cost of the context extraction a
 We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration file to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (e.g., syntax issues, policy conflicts) or general misconfigurations. Example prompting, queries, and responses are shown in Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}.
 
 \subsection{Case Study 1: Synthetic Change Verification}
-In this case study, we first evaluate \sysname{} on synthetically introduced configuration changes, representing both correct and incorrect modifications. Synthetic changes allow us to systematically test various misconfiguration types and assess detection accuracy in a controlled environment.
-We broadly categorize router misconfigurations into three types: (1) syntax errors, (2) range violations, and (3) dependency/conflict issues.
+We first evaluate \sysname{} on synthetically introduced configuration changes, representing both correct and incorrect modifications. Synthetic changes allow us to systematically test various misconfiguration types and assess detection accuracy in a controlled environment.
+We broadly categorize router misconfigurations into three types:
 \begin{itemize}
-    \item \textit{Syntax errors} occur when the configuration syntax does not adhere to the expected format or structure. For example, a missing bracket or misused keyword in a BGP routing policy.
-    \item \textit{Range violations} involve parameter values that fall outside the acceptable range. An example would be an MTU value that exceeds the maximum allowed for a specific interface type.
-    \item \textit{Dependency/conflict (D/C)} issues arise when different configuration lines are incompatible or contradict each other. For instance, a firewall rule might block traffic that another policy explicitly permits.
+    \item \textit{Syntax errors} occur when the configuration does not adhere to the expected format or structure---e.g., a missing bracket or misused keyword in a BGP routing policy.
+    \item \textit{Range violations} involve parameter values that fall outside the acceptable range---e.g., an MTU value that exceeds the maximum allowed for a specific interface type.
+    \item \textit{Dependency/conflict (D/C) issues} arise when different configuration lines are incompatible or contradict each other---e.g., a firewall rule might block traffic that another policy explicitly permits.
 \end{itemize}
 
 
-
-\begin{table}[ht]
+\begin{table}[tb]
 \centering
-\caption{Synthetic Misconfigurations Introduced and LLM Requested Context for \sysname{}}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{|l|l|l|l|}
 \hline
@@ -73,9 +71,9 @@ We broadly categorize router misconfigurations into three types: (1) syntax erro
 & Disabled Sampling & ...family inet6: \textcolor{red}{SAMPLING MISSING/DISABLED}& \( R(P), N(P) \)  \\ \cline{2-4}
 & VRF Target Conflict & ...vrf-target target:11537:\textcolor{red}{"313001"}& \( S(P) \)  \\ \cline{2-4}
 & Abnormal Small MTU & ...family iso: mtu: \textcolor{red}{"1497"}& \( R(P), S(P) \)  \\ \hline
-\end{tabular}
+\end{tabular}}
+\caption{Synthetic Misconfigurations Introduced and LLM Requested Context for \sysname{}.}
 \label{tab:syn_configs}
-}
 \end{table}
 
 
@@ -88,16 +86,16 @@ We broadly categorize router misconfigurations into three types: (1) syntax erro
 % To evaluate \sysname{}, we first obtain snapshot configurations from Internet2 (Juniper devices) and sampled 16 configuration lines known to be correct. We then modify these configuration lines to introduce synthetic erros representing the three types of misconfigurations. For syntax and range misconfiguration types, we create four distinct misconfigurations for each, resulting in a total of 8 misconfigurations as shown in Table~\ref{tab:syn_configs}. For D/C misconfiguration type, we introduce 8 distinct errors because LLMs are inherently good at distinguishing syntax and range issues within configuration as we previous discussed but \sysname{} enables the discovery of more nuanced D/C issues through context mining and so we introduce more of these errors to verify these. 
 
 
-To evaluate \sysname{}, we obtain snapshot configurations from Internet2 (Juniper devices) and sampled 16 correct configuration lines. These were then modified to introduce synthetic errors across three misconfiguration types: syntax, range, and dependency/conflict (D/C). For syntax and range errors, we created four distinct misconfigurations each, totaling 8 errors (see Table~\ref{tab:syn_configs}). For D/C misconfigurations, we introduced 8 distinct errors, as vanilla LLMs excel at detecting syntax and range issues, while \sysname{}’s context mining is particularly effective at uncovering nuanced D/C issues. The additional D/C errors allow us to thoroughly assess this capability.
+To evaluate \sysname{}, we obtain snapshot configurations from Internet2 (Juniper devices) and sampled 16 correct configuration lines. These were then modified to introduce synthetic errors across the three misconfiguration types. For syntax and range errors, we created four distinct misconfigurations each, totaling 8 errors (see Table~\ref{tab:syn_configs}). For D/C misconfigurations, we introduced 8 distinct errors, as vanilla LLMs excel at detecting syntax and range issues, while \sysname{}’s context mining is particularly effective at uncovering nuanced D/C issues. The additional D/C errors allow us to thoroughly assess this capability.
 For each misconfiguration, we run \sysname{} by following the two components: (1) treating the misconfigured line as the line under review and extracting all relevant context, and (2) conducting the iterative, sequential prompting process against the model, obtaining the final misconfiguration detection decision.
 
 When forming the prompt, we explicitly instruct the model to look for each type of misconfiguration—syntax, range, or dependency/conflict—individually. This is because the model may request different types of context depending on the specific misconfiguration type it is trying to detect. We report only the results corresponding to the actual misconfiguration type introduced. Importantly, \sysname{} never yielded false positives when the model was instructed to find a misconfiguration type different from the actual type. Additionally, we find that asking the model to search for `GENERAL' misconfigurations also led to successful detection, though more context was often requested by the model.
 
-As a baseline, we compare \sysname{} to three representative tools: \textit{Batfish}~\cite{fogel2015general}, a model-checking tool, \textit{Diffy}~\cite{kakarla2024diffy}, a data-mining-based tool, and \textit{Ciri}~\cite{lian2023configuration}, a partition-based GPT Q\&A model using GPT-4o for fair comparison. We present the specific misconfigurations introduced and the results in Table~\ref{tab:syn_result}, demonstrating how each tool performed in detecting the synthetic misconfigurations across the three categories.
+We compare \sysname{} to three representative tools: the model checker \textit{Batfish}~\cite{fogel2015general},  the consistency checker \textit{Diffy}~\cite{kakarla2024diffy}, and the partition-based GPT Q\&A model \textit{Ciri}~\cite{lian2023configuration} using GPT-4o for fair comparison. 
+%We present the specific misconfigurations introduced and the results in Table~\ref{tab:syn_result}, demonstrating how each tool performed in detecting the synthetic misconfigurations across the three categories.
 
-\begin{table}[ht]
+\begin{table}[thb]
 \centering
-\caption{Synthetic Misconfiguration Detection Results:}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{|l|l|l|l|l|l|}
 \hline
@@ -106,12 +104,12 @@ As a baseline, we compare \sysname{} to three representative tools: \textit{Batf
 Syntax Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 3/4 (75\%) & 0/4 (0\%) \\ \hline
 Range Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 0/4 (0\%) & 0/4 (0\%) \\ \hline
 D/C Error& 8 & 8/8 (100\%) & 1/8 (12.5\%) & 2/8 (25\%) & 0/8 (0\%) \\ \hline
-\multirow{2}{*}{\makecell[{{l}}]{Original Configs\\ (No Error)}}& \multirow{2}{*}{\makecell[{{l}}]{12}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} \\ 
+\multirow{2}{*}{\makecell[{{l}}]{Original Configs\\ (No Error)}}& \multirow{2}{*}{\makecell[{{l}}]{12 \aaron{16?!}}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} \\ 
 &  &  &  &  &  \\ \hline
 \textbf{Total} & \textbf{32} & \textbf{32/32 (100\%)} & \textbf{21/32 (65.6\%)} & \textbf{21/32 (65.6\%)} & \textbf{16/32 (50\%)} \\ \hline
-\end{tabular}
+\end{tabular}}
+\caption{Synthetic Misconfiguration Detection Results.}
 \label{tab:syn_result}
-}
 \end{table}
 
 The results in Table~\ref{tab:syn_result} demonstrate that \sysname{} outperforms the other tools in detecting all three types of misconfigurations. It achieves a perfect 16/16 detection rate across the board for misconfigurations. This indicates that \sysname{}'s comprehensive context mining and iterative prompting process effectively identify errors in network configurations, even in more complex cases like D/C issues. In contrast, the other tools showed limitations, particularly when it came to detecting range violations and D/C issues.
@@ -123,11 +121,10 @@ This success is due to the LLM model's training on vast, diverse text, including
 However, it lags significantly behind \sysname{} in detecting D/C issues, with a 12.5\% detection rate in this category. The primary reason for this underperformance is the partitioning approach. This approach analyzes configuration sections in isolation, failing to capture the complex interdependencies between configuration lines, which is crucial for detecting D/C issues. The only D/C misconfiguration that Ciri successfully detects is the `VRF Target Conflict,' where the conflicting `route-distinguisher' value configuration happens to be in the same prompt partition, providing just enough context for accurate detection.
 
 As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues, such as policy conflicts, require the model to understand and analyze interactions between different configuration elements.
-\sysname{} addresses this by guiding the LLM to request the relevant contextual information it needs for accurate reasoning and detection. The example \sysname{}-enable LLM responses in Table~\ref{tab:syn_responses} clearly showcase that these contexts are being leveraged to derive the correct misconfiguration detection results. In contrast, partition-based GPT struggles to detect such misconfigurations effectively, as it analyzes configurations in isolation and can often miss these complex interdependencies.
+\sysname{} addresses this by guiding the LLM to request the relevant contextual information it needs for accurate reasoning and detection. The example \sysname{}-enable LLM responses in Table~\ref{tab:syn_responses} clearly show that these contexts are being leveraged to derive the correct detection results. In contrast, partition-based GPT struggles to detect such misconfigurations effectively, as it analyzes configurations in isolation and can often miss these complex interdependencies.
 
 \begin{table}[ht]
 \centering
-\caption{Example LLM Reasoning for \sysname{}}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{|l|l|l|p{8cm}|} % Define a fixed width for the Reason column
 \hline
@@ -142,9 +139,9 @@ As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues,
  & \multirow{5}{*}{Disabled Sampling} & \multirow{5}{*}{["inet6"]} & "The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6."\\\cline{2-4}
  & \multirow{5}{*}{VRF Target Conflict} & \multirow{5}{*}{["target"]} & "The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN."\\\cline{2-4}
  & \multirow{5}{*}{Incorrect Filter Usage} & \multirow{5}{*}{["input-list"]} & "The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6."\\\hline
-\end{tabular}
+\end{tabular}}
+\caption{Example LLM Reasoning for \sysname{}.}
 \label{tab:syn_responses}
-}
 \end{table}
 
 % The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6.
@@ -156,7 +153,7 @@ As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues,
 \paragraph{Comparison Against Non-LLM-based Tools}
 Batfish performs well on syntax errors (75\% detection rate) but struggles
 with range violations and only partially detected D/C issues (2/8).
-This can be attributed to the fact that Batfish uses a rule-based model checker, which excels in detecting predefined
+This is because Batfish uses a rule-based model checker, which excels in detecting predefined
 syntax errors but is less effective in handling misconfigurations that involve contextual nuances, such as range violations or dependency conflicts. Specifically, Batfish is able
 to detect issues related to non-existent groups and policies
 (hard-coded into its rule checks) but missed more subtle D/C
@@ -164,9 +161,9 @@ misconfigurations, like policy conflicts or filter dependencies.
 
 Diffy performs poorly across all misconfigurations, with a 0/16 detection rate, due to its data-driven approach, which focuses on learning common usage patterns from configurations and flagging anomalies as potential bugs. While effective for detecting clear deviations from standard patterns in other configuration files,
 % Diffy struggles with context-dependent or subtle misconfigurations, such as dependency/conflict (D/C) issues, that require a deeper understanding of configuration context and dependencies. 
-complex issues like policy conflicts or range violations may not deviate from typical patterns but still be incorrect, which Diffy’s template-based anomaly detection cannot capture. Furthermore, Diffy's reliance on identifying deviations from learned patterns makes it less effective at detecting syntax errors and range violations. These types of misconfigurations often follow standard formatting and numerical values that may not stand out as anomalies, making them difficult for Diffy's approach to detect without a granular understanding of configuration structure and constraints.
+complex issues like policy conflicts or range violations may not deviate from typical patterns but still be incorrect, which Diffy’s template-based anomaly detection cannot capture. Furthermore, Diffy's reliance on identifying deviations from learned patterns makes it less effective at detecting syntax errors and range violations. These types of misconfigurations often follow standard formatting and numerical values that may not stand out as anomalies, making them difficult for Diffy to detect without a granular understanding of configuration structure and constraints.
 
-Lastly, despite varying performance in detecting misconfigurations, all tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully identified all correctly configured lines prior to the introducing of the synthetic errors as valid, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
+Lastly, despite varying performance in detecting misconfigurations, all tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully marked all correctly configured lines as valid prior to the introduction of the synthetic errors, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
 
 \subsection{Case Study 2: Comprehensive Real Configuration Snapshot Verification}
 To evaluate \sysname{} on real-world misconfiguration detection, we obtain Aruba router configuration snapshots from a medium-scale campus network. The objective here is twofold: (1) to verify the scalability of \sysname{} when applied to larger network configurations, and (2) to investigate whether \sysname{} can detect potential misconfigurations that have not yet been identified by existing tools.
@@ -174,7 +171,7 @@ To evaluate \sysname{} on real-world misconfiguration detection, we obtain Aruba
 
 In this case study, we perform two types of analysis, beginning with \textit{targeted misconfiguration detection:} A key aspect of this case study is the demonstration of \sysname{}'s flexibility in integrating additional context types under different scenarios. This is particularly useful when network operators have prior domain knowledge about specific misconfigurations they are trying to detect that fall outside of \sysname{}'s default context library.
 To illustrate this flexibility, we consult the network operators who provided the configuration snapshots. They were specifically interested in detecting incorrect `VLAN assignments' --- a type of misconfiguration that often requires a network-wide view. Such misconfigurations are usually identifiable only when considering the configurations of other devices in the same network, as deviations from uniform configurations can indicate potential issues.
-To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context'.  This context type mines  the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous. For this scenario, we modified the initial prompt to focus specifically on detecting `WRONG VLAN ASSIGNMENT'.
+To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context'.  This context type mines  the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous. For this scenario, we modify the initial prompt to focus specifically on detecting `WRONG VLAN ASSIGNMENT'.
 
 Example Intra-Router Consistency Context extracted:
 
@@ -193,9 +190,8 @@ Despite the modest TPR, the false positives align with the domain experts' expec
 Thus, while the false positives may appear significant, they represent deviations from standard configurations that would typically signal errors, but in these cases, are expected and intentional adjustments.
 
 
-\begin{table}[ht]
+\begin{table}[tb]
 \centering
-\caption{Comprehensive Real Configuration Snapshot Verification Results: \sysname{}-Detected Misconfigurations}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{|l|l|l|l|l|}
 \hline
@@ -219,10 +215,8 @@ Thus, while the false positives may appear significant, they represent deviation
 &\multirow{2}{*}{\makecell[{{l}}]{Ambiguous Rate\\Limit Values}} & \multirow{2}{*}{\makecell{2}} & 
 \multirow{2}{*}{\makecell[{{l}}]{\textit{Ambiguous}: `Interval' and `burst' set to 0, leading\\ to nondeterministic behaviors.}} & \multirow{2}{*}{\makecell{2/2 (100\%)}}\\ 
 &&&& \\\hline
-
-
-\end{tabular}
-}
+\end{tabular}}
+\caption{Comprehensive Real Configuration Snapshot Verification Results: \sysname{}-Detected Misconfigurations}
 \label{tab:real_results}
 \end{table}
 

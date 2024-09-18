@@ -158,13 +158,30 @@
 
 %\usepackage{titlesec}
 %\titleformat{\subsubsection}[runin]{\normalfont\normalsize\bfseries}%{\thesubsubsection}{1em}{}
+\captionsetup[figure]{belowskip=0pt}
+\captionsetup[figure]{skip=0pt}
+\captionsetup[table]{belowskip=0pt}
+\captionsetup[table]{skip=0pt}
+% \setlist[enumerate]{noitemsep, topsep=0pt}
+% \setlist[itemize]{noitemsep, topsep=0pt}
+
+%\usepackage{titlesec}
+
+\usepackage[compact]{titlesec}
+\renewcommand{\paragraph}[1]{\noindent\textbf{#1}}
+\titlespacing{\paragraph}{0pt}{*0.5}{*1}
+\setlength{\textfloatsep}{5pt plus 0pt minus 2.0pt}
+\titlespacing\section{0pt}{*1.8}{*1.1}
+\titlespacing\subsection{0pt}{*1.5}{*1.1}
+\titlespacing\subsection{0pt}{*1.3}{*0.8}
+\usepackage{booktabs}
 
 \begin{document}
 
 \newcommand*{\affmark}[1][*]{\textsuperscript{#1}}
 \newcommand*{\affaddr}[1]{#1}
 
-\title{CAIP: Context Aware Iterative Prompting for Router Misconfiguration Detection}
+\title{CAIP: Context Aware Iterative Prompting for LLM-Powered Router Misconfiguration Detection}
 
 
 % \pagenumbering{gobble}
