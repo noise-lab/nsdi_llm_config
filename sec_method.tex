@@ -3,7 +3,7 @@
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\linewidth]{figs/caip.pdf}
+    \includegraphics[width=\linewidth]{figs/caip_space.pdf}
     \caption{\sysname{} system overview.}
     \label{fig:overview}
 \end{figure*}
@@ -12,32 +12,35 @@ To address the limitations of partition-based prompting, we design Context-Aware
 
 
 \mypara{1. Context Mining Component}
-In this phase, \sysname{} automatically mines all relevant context for a given configuration line under examination. Relevance here refers to configurations that, while not necessarily directly related, provide important insights—such as neighboring configurations, similar lines applied in different contexts, or referenceable configurations that define key parameters. This context mining is designed to be both efficient and precise, extracting only the most relevant data from the configuration file without flooding the system with unnecessary information.
+In this phase, \sysname{} automatically mines all relevant context for a given configuration line under examination. Relevance here refers to configurations that, while not necessarily directly related, provide important insights—such as neighboring configurations, similar lines applied in different contexts, or referenceable configurations that define key parameters.
+
+% This context mining is designed to be both efficient and precise, extracting only the most relevant data from the configuration file without flooding the system with unnecessary information.
 
 \mypara{2. Iterative Prompting Component}
 Once the relevant context has been mined, the online component engages the LLM through an iterative prompting process. Instead of overwhelming the model with all the extracted context at once, \sysname{} interacts with the LLM in a guided, sequential manner.
 
 
 
-We detail the challenges encountered in designing these two components and present the solutions that enable \sysname{} to perform effective context extraction and interactive prompting for misconfiguration detection.
+We detail the challenges encountered in designing these two components and present the solutions.
+% that enable \sysname{} to perform effective context extraction and interactive prompting for misconfiguration detection.
+
 \subsection{Context Mining}\label{mining_method}
 \subsubsection{Challenge 1 - Efficient and accurate context mining}
 \label{challenge_1}
 Configuration files are often lengthy and complex, consisting of multiple interrelated lines that define various aspects of a system's behavior. When analyzing a specific configuration line, it is crucial to efficiently identify and extract the relevant context to reduce the computational burden on LLMs and minimize the risk of introducing irrelevant information that could degrade the accuracy of misconfiguration detection. This task is challenging because, while these configurations are typically written in a machine and human-readable format, automating the process of context extraction requires a deep understanding of the hierarchical and interconnected nature of the configuration data. For example, in a network configuration, a line that specifies an access control rule might be dependent on prior lines that define network segments or user roles. Without properly extracting and including this context in prompt, the LLM might misinterpret the rule, leading to false positives or missed misconfigurations.
 
 To address this challenge, we leverage two observations:
+
+\mypara{1. Hierarchical Structure of Configuration Files}
+    Configuration files are typically written in a structured, hierarchical format that can be effectively modeled as a tree, as shown in the example in Figure~\ref{fig:tree}. In this tree representation (\(T\)), each node (\(V\)) corresponds to a specific configuration element, and edges represent the relationships or dependencies between these elements. Let any unique path \(
+P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \}
+\) in this tree have \(k\) nodes, where the value of \(k\) can vary depend on the path taken. The root node (\(V_1\)) represents the entry point of the configuration file (thus, it functions solely as the root of the tree, providing no semantic meaning, and remains identical regardless of the path taken), while the immediate following node (\(V_2(P)\)) corresponds to the broadest configuration category in this specific path. Intermediate nodes at subsequent levels (\( V_2(P), V_3(P), \dots, V_{k-1}(P) \)) represent increasingly nested configuration sections or subcategories, each refining the configuration context. The leaf node \(V_k(P)\) (or parameter node) represents the final configurable parameter in this path, with the associated value \(v_k(P)\), \ie, parameter values, indicating the specific configuration setting. A unique configuration line is thus a complete path in the tree, starting from the root node and terminating at a parameter node, where the path reflects the hierarchical structure and relationships defined in the configuration file.
 \begin{figure}[t]
     \centering
     \fbox{\includegraphics[width=0.85\columnwidth]{figs/tree_form.png}}
     \caption{Example snippet of tree-formatted Junpiter router configuration file.}
     \label{fig:tree}
 \end{figure}
-
-\mypara{1. Hierarchical Structure of Configuration Files}
-    Configuration files are typically written in a structured, hierarchical format that can be effectively modeled as a tree, as shown in the example in Figure~\ref{fig:tree}. In this tree representation (\(T\)), each node (\(V\)) corresponds to a specific configuration element, and edges represent the relationships or dependencies between these elements. Let any unique path \(
-P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \}
-\) in this tree have \(k\) nodes, where the value of \(k\) can vary depend on the path taken. The root node (\(V_1\)) represents the entry point of the configuration file (thus, it functions solely as the root of the tree, providing no semantic meaning, and remains identical regardless of the path taken), while the immediate following node (\(V_2(P)\)) corresponds to the broadest configuration category in this specific path. Intermediate nodes at subsequent levels (\( V_2(P), V_3(P), \dots, V_{k-1}(P) \)) represent increasingly nested configuration sections or subcategories, each refining the configuration context. The leaf node \(V_k(P)\) (or parameter node) represents the final configurable parameter in this path, with the associated value \(v_k(P)\), \ie, parameter values, indicating the specific configuration setting. A unique configuration line is thus a complete path in the tree, starting from the root node and terminating at a parameter node, where the path reflects the hierarchical structure and relationships defined in the configuration file.
-
     \mypara{2. Contextual Relevance from Different Aspects} We make the observation that the context related to any given configuration line can be categorized into three types based on its position and relation within the configuration file as shown in the example in Figure~\ref{fig:context_mine}, with increasing levels of complexity to mine. They each providing unique insights that contribute to accurate misconfiguration detection: 
     
     \mysubpara{Neighboring Configurations} are those that are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file, making them straightforward to extract.
@@ -75,9 +78,9 @@ where \( P' \) shares the first \( m \) nodes with \( P \), but the nodes follow
 Adjusting \( m \) allows for control over the size and relevance of the neighboring context.
 A common choice is to set \(V_m(P) = V_m(P') = V_{k-1}(P) \), which captures sufficient context while avoiding unnecessary complexity. For example. let the configuration path under review be represented as
 \[
-P = \{V_0 \rightarrow A \rightarrow B \rightarrow C \rightarrow D = v_D \},
+P = \{V_0 \rightarrow A \rightarrow B \rightarrow C \rightarrow D = v_D \} \mid V_{k-1}(P) = C
 \]
-where \(V_{k-1} = C \). The set of neighboring paths \( N(P) \) can be defined as:
+The set of neighboring paths \( N(P) \) can be defined as:
 \[
 N(P) = \{ P' \in T \mid P' = V_0 \rightarrow A \rightarrow B \rightarrow C \rightarrow D' = v_{D'}, D' \neq D \}
 \]
@@ -107,10 +110,10 @@ This ensures the extracted neighboring paths are closely relevant, revealing how
 % % By focusing on the same \( L_1 \) node, we 
 % ensure that we are comparing similar types of configurations within the same category or context, even though the specific paths leading to \( V_k(P') \) and  \( V_k(P) \) may vary. Using only identical root node \( V_1 \) would not provide meaningful differentiation, as it encompasses the entire configuration file, making it too general for this analysis. By comparing these variations, we can understand how the same type of parameter is configured, which is essential for ensuring consistency across the network configuration.
 
-\paragraph{Similar Configuration Mining:} To identify similar configurations, we focus on paths that share the same root node (\(V_1\)), broadest category node (\(V_2\)), and parameter node (\(V_k\)), but differ in their intermediate nodes or parameter values. Let \( P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \} \) represent the configuration line under review.
+\paragraph{Similar Configuration Mining:} To identify similar configurations, we focus on paths that share the same root node (\(V_1\)), broadest category node (\(V_2\)), and parameter node (\(V_k\)), but differ in their intermediate nodes or parameter values. Let \( P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \} \) represent the configuration line under review again.
 The set of similar configuration paths \( S(P) \) is defined as:
 \begin{multline*}
-S(P) = \{ P' : P' = \{ V_1 \rightarrow V_2(P') \rightarrow V_3(P') \rightarrow \dots \rightarrow V_k(P') \\ = v_k(P') \} \},
+S(P) = \{ P' : P' = \{ V_1 \rightarrow V_2(P') \rightarrow \dots \rightarrow V_k(P') = v_k(P') \} \},
 \end{multline*}
 where \( P' \) shares \(V_2(P') = V_2(P)\) and \(V_k(P') = V_k(P)\), but may have different intermediate nodes (\( V_3(P'), V_4(P'), \dots \)) and a different parameter value \( v_k(P') \).
 
@@ -167,7 +170,7 @@ Distinguishing between pre-defined and user-defined values is crucial to avoid e
     Irrelevant context introduced during the context mining process might erroneously group together configurations that pertain to entirely different aspects of network operation.
     % thereby confusing the LLM and reducing the accuracy of its inferences.
     This contamination of the context pool dilutes the relevance of the mined information, reducing the precision of the LLM and increasing the likelihood of false positives or missed errors. 
-    \item \textit{Reducing Computational Costs}: LLMs can be computationally expensive, especially when processing large-scale network configurations with many interdependent components. Distinguishing between pre-defined and user-defined values can help optimizing the context extraction process, ensuring that only relevant and necessary contexts are passed to the model. This reduces the computational overhead associated with processing extraneous information.
+    \item \textit{Reducing Computational Costs}: LLMs can be computationally expensive, especially when processing large-scale network configurations with many interdependent components. Distinguishing between pre and user-defined values can help optimizing the context extraction process, ensuring that only relevant and necessary contexts are passed to the model. This reduces the computational overhead associated with processing extraneous information.
     % For instance, consider the case of mining context for a user-defined IP address. Suppose a configuration line specifies Interface → IPAddress = 192.168.1.1. In this case, the relevant context might include other configurations that reference this specific IP address, such as firewall rules or routing entries. However, if the mining process mistakenly treats Allow or True in the same way as user-defined values, it might pull in unrelated contexts from access control lists or feature flags, resulting in unnecessary processing and potentially higher costs.
 
 \end{enumerate}
@@ -226,7 +229,7 @@ Even with precise context extraction mechanisms we have in place, the extracted 
     % \item \textit{Decreased Performance}: Providing too much context can overwhelm the model’s processing capabilities, degrading the overall quality of the output. LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can severely impact performance.
 \end{enumerate}
 
-For example, in detecting routing policy misconfigurations, a single misconfigured line might have dependencies across several sections of the file. If all related context is presented at once, the model can fail to prioritize the correct information, leading to missed or incorrect detection.
+For example, in detecting routing policy misconfigurations, a single misconfigured line might have dependencies across several sections of the file. If all related context is presented at once, the model can fail to prioritize the correct information, leading to missed or incorrect detection. State-of-the-art methods, such as prompt chaining, focus on guiding the model through incremental instructions, doesn't solve this issue, as it doesn't dynamically adjust the context based on the model's needs.
 
 
 \mypara{Solution}
@@ -255,14 +258,14 @@ To combat these issues, \sysname{} implements an iterative, sequential prompting
 
 This sequential, interactive approach mirrors how a network administrator might manually review a configuration file—examining the most relevant sections first, then digging deeper into referenceable or adjacent configurations as needed. It ensures that the model focuses on the most critical aspects of the configuration without becoming overwhelmed by extraneous information.
 
-\subsubsection{Why Iterative Prompting Works}
+\subsubsection{Why Iterative, Requested Based Prompting Works}
 By breaking down the context into smaller, more digestible portions, \sysname{} addresses the fundamental challenges of context overload. This method significantly enhances the model’s ability to:
 \begin{enumerate}
-    \item Stay on target: With less irrelevant information, the model can maintain focus on the specific configuration issue under review.
-    \item Preserve coherence: Incrementally providing information allows the model to build a more coherent understanding of the configuration~\cite{li2023prompt,subramonyam2024bridging}, leading to more accurate detection of issues such as dependency conflicts or misapplied policies.
+    \item Stay on target: With less irrelevant information, the model can maintain focus on the specific issue under review.
+    \item Preserve coherence: Incrementally adding information allows the model to build a more coherent understanding of the configuration~\cite{li2023prompt,subramonyam2024bridging}, improving detection of complex issues such as dependency conflicts or misapplied policies.
     \item Optimize performance: Avoiding context overload reduces the processing burden on the model, leading to faster and more reliable outputs.
 \end{enumerate}
 
-For example, in detecting misconfigurations in a multi-layer firewall policy, \sysname{} might first present the core rule in question, then iteratively offer neighboring rules that affect the same traffic flow, followed by referenceable configuration sections that define broader network policies. This structured process ensures that the LLM has all the information it needs, without drowning in unnecessary details, enabling it to make accurate decisions.
+For example, in detecting misconfigurations in a multi-layer firewall policy, \sysname{} might first present the core rule in question, then iteratively offer neighboring rules that affect the same traffic flow, followed by referenceable configuration sections that define broader network policies. This structured process ensures that the LLM has all the information it needs, without drowning in unnecessary details, enabling it to make accurate decisions. Unlike conventional prompt-chaining, which provides incremental instructions based on a fixed context, \sysname{} dynamically adds context as requested by the LLM, focusing on the evolving needs of the analysis.
 
 % By combining efficient context extraction with iterative, focused interaction, \sysname{} represents a significant advancement in leveraging LLMs for router misconfiguration detection, ensuring that models are both effective and computationally efficient.

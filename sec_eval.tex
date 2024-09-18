@@ -14,21 +14,14 @@ We now introduce the setup for our evaluation and present the details of the cas
 \subsubsection{Context Extraction Hardware Setup}
 
 
-\textit{System Information}: GNU/Linux Red Hat Enterprise Linux release 8.8 (Ootpa);
-
+\textit{System Information}: GNU/Linux Red Hat Enterprise Linux release 8.8 (Ootpa); 
 \textit{CPU Specifications}: Architecture: x86\_64; CPU(s): 32 (2 threads/core, 16 cores/socket, 1 socket); Model: AMD EPYC 7302P 16-Core Processor; Max MHz: 3000.000; L3 cache: 16384K; NUMA node0 CPU(s): 0-31 
 
 We opt not to use the GPU, as the computational cost of the context extraction and processing tasks was manageable on the CPU --- the tasks primarily benefit from parallel CPU threads, and GPU acceleration would not provide significant additional speedup.
 
 
-\subsubsection{LLM Model Used: GPT-4o} For running the LLM-based detection, we use GPT-4o, OpenAI's most advanced transformer-based model designed for complex multi-step tasks.
-\textit{Model Specifications}:
-\begin{itemize}
-    \item Model: GPT-4o-2024-05-13
-    \item Context window: 128,000 tokens 
-    \item Max output tokens: 4,096 tokens
-    \item Training data Up to October 2023
-\end{itemize}
+\subsubsection{LLM Model Used: GPT-4o} For running the LLM-based detection, we use GPT-4o~\cite{openai_gpt4o}, OpenAI's most recent transformer-based model designed for complex multi-step tasks.
+\textit{Specifications}---Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
 
 \subsubsection{Prompting and Query Setup}
 We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration file to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (e.g., syntax issues, policy conflicts) or general misconfigurations. Example prompting, queries, and responses are shown in Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}.

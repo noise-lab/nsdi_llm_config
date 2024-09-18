@@ -136,7 +136,7 @@
 \usepackage{setspace}
 \usepackage[flushleft]{threeparttable}
 \urlstyle{rm}
-% \usepackage{enumitem}
+\usepackage{enumitem}
 \usepackage{enumerate}
 \usepackage{float}
 \usepackage{subcaption}
@@ -162,8 +162,8 @@
 \captionsetup[figure]{skip=0pt}
 \captionsetup[table]{belowskip=0pt}
 \captionsetup[table]{skip=0pt}
-% \setlist[enumerate]{noitemsep, topsep=0pt}
-% \setlist[itemize]{noitemsep, topsep=0pt}
+\setlist[enumerate]{noitemsep, topsep=0pt}
+\setlist[itemize]{noitemsep, topsep=0pt}
 
 %\usepackage{titlesec}
 
@@ -184,8 +184,6 @@
 \title{CAIP: Context Aware Iterative Prompting for LLM-Powered Router Misconfiguration Detection}
 
 
-% \pagenumbering{gobble}
-
 \author{Xi Jiang, Aaron Gember-Jacobson, Nick Feamster \\
 The University of Chicago, Colgate University}
 % \renewcommand{\shortauthors}{X. Jiang, et al}
@@ -200,24 +198,17 @@ The University of Chicago, Colgate University}
 \pagestyle{plain}
 
 %-------------------------------------------------------------------------------
+\begin{sloppypar}
 \input{sec_intro_context}
 \input{sec_background}
 \input{sec_method}
 \input{sec_eval}
 \input{sec_future}
 \input{sec_ending}
-% %-------------------------------------------------------------------------------
 \bibliographystyle{plain}
 \bibliography{citations} 
-% \bibliography{\jobname}
-% \clearpage
-
+\end{sloppypar}
 
 
 \pagebreak
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{document}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%  LocalWords:  endnotes includegraphics fread ptr nobj noindent
-%%  LocalWords:  pdflatex acks
