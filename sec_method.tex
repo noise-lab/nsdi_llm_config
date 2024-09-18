@@ -41,6 +41,7 @@ P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V
     \caption{Example snippet of tree-formatted Junpiter router configuration file.}
     \label{fig:tree}
 \end{figure}
+
     \mypara{2. Contextual Relevance from Different Aspects} We make the observation that the context related to any given configuration line can be categorized into three types based on its position and relation within the configuration file as shown in the example in Figure~\ref{fig:context_mine}, with increasing levels of complexity to mine. They each providing unique insights that contribute to accurate misconfiguration detection: 
     
     \mysubpara{Neighboring Configurations} are those that are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file, making them straightforward to extract.
@@ -58,7 +59,7 @@ P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V
     \label{fig:context_mine}
 \end{figure}
 
-Given the categorization of relevant contexts and the hierarchical tree model, we can automate the process of mining the aforementioned contexts by translating them into specific paths within the tree structure. This involves the following steps:
+Given the categorization of relevant contexts and the hierarchical tree model, we can automate the process of mining the aforementioned contexts by translating them into specific paths within the tree. This involves the following steps:
 
 \paragraph{Neighboring Configuration Mining:}
     Following the hierarchical tree structure of the configuration file, we can model the entire configuration as a tree \( T \) with nodes representing configuration elements and edges depicting the relationships between them. The root node \(V_1\) represents the entry point of the configuration file and the \(V_2\) nodes represent the broadest configuration categories.
@@ -229,7 +230,7 @@ Even with precise context extraction mechanisms we have in place, the extracted 
     % \item \textit{Decreased Performance}: Providing too much context can overwhelm the model’s processing capabilities, degrading the overall quality of the output. LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can severely impact performance.
 \end{enumerate}
 
-For example, in detecting routing policy misconfigurations, a single misconfigured line might have dependencies across several sections of the file. If all related context is presented at once, the model can fail to prioritize the correct information, leading to missed or incorrect detection. State-of-the-art methods, such as prompt chaining, focus on guiding the model through incremental instructions, doesn't solve this issue, as it doesn't dynamically adjust the context based on the model's needs.
+For example, in detecting routing policy misconfigurations, a single misconfigured line may have dependencies across several sections of the file. If all related context is presented at once, the model can fail to prioritize the correct information, leading to missed or incorrect detection. State-of-the-art methods, such as prompt chaining, focus on guiding the model through incremental instructions, doesn't solve this issue, as it doesn't dynamically adjust the context based on the model's needs.
 
 
 \mypara{Solution}

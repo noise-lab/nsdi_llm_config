@@ -132,6 +132,7 @@
 \usepackage{array}
 \usepackage{comment}
 \usepackage{listings}
+\usepackage{amssymb}
 \usepackage{dsfont}
 \usepackage{algorithmic}
 \usepackage{xurl}
@@ -185,18 +186,16 @@
 
 \title{CAIP: Context Aware Iterative Prompting for LLM-Powered Router Misconfiguration Detection}
 
-
-\author{Xi Jiang, Aaron Gember-Jacobson, Nick Feamster \\
-The University of Chicago, Colgate University}
+\author{Paper \#722, \pageref{endOfBody} pages body, \pageref{LastPage} pages total}
 % \renewcommand{\shortauthors}{X. Jiang, et al}
 \newcommand{\eg}{{\it e.g.}}
 \newcommand{\ie}{{\it i.e.}}
 \newcommand{\etal}{{\it et al.}}
 \newcommand{\sysname}{{CAIP}}
 \input{macros}
-\input{sec_abstract}
-
 \maketitle
+
+\input{sec_abstract}
 \pagestyle{plain}
 
 %-------------------------------------------------------------------------------
@@ -207,10 +206,11 @@ The University of Chicago, Colgate University}
 \input{sec_eval}
 \input{sec_future}
 \input{sec_ending}
+\label{endOfBody}
 \bibliographystyle{plain}
 \bibliography{citations} 
 \end{sloppypar}
-
+\label{LastPage}
 
 \pagebreak
 \end{document}
