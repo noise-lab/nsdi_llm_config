@@ -1,0 +1,339 @@
+\begin{thebibliography}{10}
+
+\bibitem{abhashkumar2020tiramisu}
+Anubhavnidhi Abhashkumar, Aaron Gember-Jacobson, and Aditya Akella.
+\newblock Tiramisu: Fast multilayer network verification.
+\newblock In {\em 17th USENIX Symposium on Networked Systems Design and
+  Implementation (NSDI 20)}, pages 201--219, 2020.
+
+\bibitem{achiam2023gpt}
+Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya,
+  Florencia~Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman,
+  Shyamal Anadkat, et~al.
+\newblock Gpt-4 technical report.
+\newblock {\em arXiv preprint arXiv:2303.08774}, 2023.
+
+\bibitem{al2011configchecker}
+Ehab Al-Shaer and Mohammed~Noraden Alsaleh.
+\newblock Configchecker: A tool for comprehensive security configuration
+  analytics.
+\newblock In {\em 2011 4th Symposium on Configuration Analytics and Automation
+  (SAFECONFIG)}, pages 1--2. IEEE, 2011.
+
+\bibitem{beckett2017general}
+Ryan Beckett, Aarti Gupta, Ratul Mahajan, and David Walker.
+\newblock A general approach to network configuration verification.
+\newblock In {\em Proceedings of the Conference of the ACM Special Interest
+  Group on Data Communication}, pages 155--168, 2017.
+
+\bibitem{birkner2021metha}
+Rudiger Birkner, Tobias Brodmann, Petar Tsankov, Laurent Vanbever, and Martin
+  Vechev.
+\newblock Metha: Network verifiers need to be correct too!
+\newblock In {\em 18th USENIX Symposium on Networked Systems Design and
+  Implementation (NSDI)}, 2021.
+
+\bibitem{bogdanov2024leveraging}
+Mark Bogdanov.
+\newblock {\em Leveraging Advanced Large Language Models To Optimize Network
+  Device Configuration}.
+\newblock PhD thesis, Purdue University Graduate School, 2024.
+
+\bibitem{brown2020language}
+Tom~B Brown.
+\newblock Language models are few-shot learners.
+\newblock {\em arXiv preprint arXiv:2005.14165}, 2020.
+
+\bibitem{carion2020end}
+Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander
+  Kirillov, and Sergey Zagoruyko.
+\newblock End-to-end object detection with transformers.
+\newblock In {\em European conference on computer vision}, pages 213--229.
+  Springer, 2020.
+
+\bibitem{chen2021developing}
+Xie Chen, Yu~Wu, Zhenghao Wang, Shujie Liu, and Jinyu Li.
+\newblock Developing real-time streaming transformer transducer for speech
+  recognition on large-scale dataset.
+\newblock In {\em ICASSP 2021-2021 IEEE International Conference on Acoustics,
+  Speech and Signal Processing (ICASSP)}, pages 5904--5908. IEEE, 2021.
+
+\bibitem{chen2024automatic}
+Yinfang Chen, Huaibing Xie, Minghua Ma, Yu~Kang, Xin Gao, Liu Shi, Yunjie Cao,
+  Xuedong Gao, Hao Fan, Ming Wen, et~al.
+\newblock Automatic root cause analysis via large language models for cloud
+  incidents.
+\newblock In {\em Proceedings of the Nineteenth European Conference on Computer
+  Systems}, pages 674--688, 2024.
+
+\bibitem{chowdhery2023palm}
+Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra,
+  Adam Roberts, Paul Barham, Hyung~Won Chung, Charles Sutton, Sebastian
+  Gehrmann, et~al.
+\newblock Palm: Scaling language modeling with pathways.
+\newblock {\em Journal of Machine Learning Research}, 24(240):1--113, 2023.
+
+\bibitem{feamster2005detecting}
+Nick Feamster and Hari Balakrishnan.
+\newblock Detecting bgp configuration faults with static analysis.
+\newblock In {\em Proceedings of the 2nd conference on Symposium on Networked
+  Systems Design \& Implementation-Volume 2}, pages 43--56, 2005.
+
+\bibitem{fogel2015general}
+Ari Fogel, Stanley Fung, Luis Pedrosa, Meg Walraed-Sullivan, Ramesh Govindan,
+  Ratul Mahajan, and Todd Millstein.
+\newblock A general approach to network configuration analysis.
+\newblock In {\em 12th USENIX Symposium on Networked Systems Design and
+  Implementation (NSDI 15)}, pages 469--483, 2015.
+
+\bibitem{gu2023mamba}
+Albert Gu and Tri Dao.
+\newblock Mamba: Linear-time sequence modeling with selective state spaces.
+\newblock {\em arXiv preprint arXiv:2312.00752}, 2023.
+
+\bibitem{gulati2020conformer}
+Anmol Gulati, James Qin, Chung-Cheng Chiu, Niki Parmar, Yu~Zhang, Jiahui Yu,
+  Wei Han, Shibo Wang, Zhengdong Zhang, Yonghui Wu, et~al.
+\newblock Conformer: Convolution-augmented transformer for speech recognition.
+\newblock {\em arXiv preprint arXiv:2005.08100}, 2020.
+
+\bibitem{hill2024transformers}
+Felix Hill.
+\newblock Why transformers are obviously good models of language.
+\newblock {\em arXiv preprint arXiv:2408.03855}, 2024.
+
+\bibitem{jeffrey2009model}
+Alan Jeffrey and Taghrid Samak.
+\newblock Model checking firewall policy configurations.
+\newblock In {\em 2009 IEEE international symposium on policies for distributed
+  systems and networks}, pages 60--67. IEEE, 2009.
+
+\bibitem{kakarla2020finding}
+Siva Kesava~Reddy Kakarla, Alan Tang, Ryan Beckett, Karthick Jayaraman, Todd
+  Millstein, Yuval Tamir, and George Varghese.
+\newblock Finding network misconfigurations by automatic template inference.
+\newblock In {\em 17th USENIX Symposium on Networked Systems Design and
+  Implementation (NSDI 20)}, pages 999--1013, 2020.
+
+\bibitem{kakarla2024diffy}
+Siva Kesava~Reddy Kakarla, Francis~Y Yan, and Ryan Beckett.
+\newblock Diffy: Data-driven bug finding for configurations.
+\newblock {\em Proceedings of the ACM on Programming Languages},
+  8(PLDI):199--222, 2024.
+
+\bibitem{khurana2024and}
+Anjali Khurana, Hariharan Subramonyam, and Parmit~K Chilana.
+\newblock Why and when llm-based assistants can go wrong: Investigating the
+  effectiveness of prompt-based interactions for software help-seeking.
+\newblock In {\em Proceedings of the 29th International Conference on
+  Intelligent User Interfaces}, pages 288--303, 2024.
+
+\bibitem{le2006characterization}
+Franck Le, Sihyung Lee, Tina Wong, Hyong~S Kim, and Darrell Newcomb.
+\newblock Characterization and problem detection of routing policy
+  configurations.
+\newblock 2006.
+
+\bibitem{le2006minerals}
+Franck Le, Sihyung Lee, Tina Wong, Hyong~S Kim, and Darrell Newcomb.
+\newblock Minerals: using data mining to detect router misconfigurations.
+\newblock In {\em Proceedings of the 2006 SIGCOMM workshop on Mining network
+  data}, pages 293--298, 2006.
+
+\bibitem{le2008detecting}
+Franck Le, Sihyung Lee, Tina Wong, Hyong~S Kim, and Darrell Newcomb.
+\newblock Detecting network-wide and router-specific misconfigurations through
+  data mining.
+\newblock {\em IEEE/ACM transactions on networking}, 17(1):66--79, 2008.
+
+\bibitem{le2007rr}
+Franck Le, Geoffrey~G. Xie, and Hui Zhang.
+\newblock Understanding route redistribution.
+\newblock In {\em 2007 IEEE International Conference on Network Protocols
+  (ICNP)}, 2007.
+
+\bibitem{lican}
+Jiaqi Li, Mengmeng Wang, Zilong Zheng, and Muhan Zhang.
+\newblock Can long-context large language models understand long contexts?
+
+\bibitem{li2023prompt}
+Lei Li, Yongfeng Zhang, and Li~Chen.
+\newblock Prompt distillation for efficient llm-based recommendation.
+\newblock In {\em Proceedings of the 32nd ACM International Conference on
+  Information and Knowledge Management}, pages 1348--1357, 2023.
+
+\bibitem{li2024long}
+Tianle Li, Ge~Zhang, Quy~Duc Do, Xiang Yue, and Wenhu Chen.
+\newblock Long-context llms struggle with long in-context learning.
+\newblock {\em arXiv preprint arXiv:2404.02060}, 2024.
+
+\bibitem{lian2023configuration}
+Xinyu Lian, Yinfang Chen, Runxiang Cheng, Jie Huang, Parth Thakkar, and Tianyin
+  Xu.
+\newblock Configuration validation with large language models.
+\newblock {\em arXiv preprint arXiv:2310.09690}, 2023.
+
+\bibitem{lin2022survey}
+Tianyang Lin, Yuxin Wang, Xiangyang Liu, and Xipeng Qiu.
+\newblock A survey of transformers.
+\newblock {\em AI open}, 3:111--132, 2022.
+
+\bibitem{liskavets2024prompt}
+Barys Liskavets, Maxim Ushakov, Shuvendu Roy, Mark Klibanov, Ali Etemad, and
+  Shane Luke.
+\newblock Prompt compression with context-aware sentence encoding for fast and
+  improved llm inference.
+\newblock {\em arXiv preprint arXiv:2409.01227}, 2024.
+
+\bibitem{liu2024large}
+Chang Liu, Xiaohui Xie, Xinggong Zhang, and Yong Cui.
+\newblock Large language models for networking: Workflow, advances and
+  challenges.
+\newblock {\em arXiv preprint arXiv:2404.12901}, 2024.
+
+\bibitem{neil2020transformers}
+Houlsby Neil and Weissenborn Dirk.
+\newblock Transformers for image recognition at scale.
+\newblock {\em Online: https://ai. googleblog.
+  com/2020/12/transformers-for-image-recognitionat. html}, 2020.
+
+\bibitem{parmar2018image}
+Niki Parmar, Ashish Vaswani, Jakob Uszkoreit, Lukasz Kaiser, Noam Shazeer,
+  Alexander Ku, and Dustin Tran.
+\newblock Image transformer.
+\newblock In {\em International conference on machine learning}, pages
+  4055--4064. PMLR, 2018.
+
+\bibitem{prabhu2020plankton}
+Santhosh Prabhu, Kuan~Yen Chou, Ali Kheradmand, Brighten Godfrey, and Matthew
+  Caesar.
+\newblock Plankton: Scalable network configuration verification through model
+  checking.
+\newblock In {\em 17th USENIX Symposium on Networked Systems Design and
+  Implementation (NSDI 20)}, pages 953--967, 2020.
+
+\bibitem{qian2024long}
+Hongjin Qian, Zheng Liu, Peitian Zhang, Kelong Mao, Yujia Zhou, Xu~Chen, and
+  Zhicheng Dou.
+\newblock Are long-llms a necessity for long-context tasks?
+\newblock {\em arXiv preprint arXiv:2405.15318}, 2024.
+
+\bibitem{qiu2020pre}
+Xipeng Qiu, Tianxiang Sun, Yige Xu, Yunfan Shao, Ning Dai, and Xuanjing Huang.
+\newblock Pre-trained models for natural language processing: A survey.
+\newblock {\em Science China technological sciences}, 63(10):1872--1897, 2020.
+
+\bibitem{ritchey2000using}
+Ronald~W Ritchey and Paul Ammann.
+\newblock Using model checking to analyze network vulnerabilities.
+\newblock In {\em Proceeding 2000 IEEE Symposium on Security and Privacy. S\&P
+  2000}, pages 156--165. IEEE, 2000.
+
+\bibitem{shanahan2024talking}
+Murray Shanahan.
+\newblock Talking about large language models.
+\newblock {\em Communications of the ACM}, 67(2):68--79, 2024.
+
+\bibitem{sheng2019nrtr}
+Fenfen Sheng, Zhineng Chen, and Bo~Xu.
+\newblock Nrtr: A no-recurrence sequence-to-sequence model for scene text
+  recognition.
+\newblock In {\em 2019 International conference on document analysis and
+  recognition (ICDAR)}, pages 781--786. IEEE, 2019.
+
+\bibitem{shvartzshnaider2024llm}
+Yan Shvartzshnaider, Vasisht Duddu, and John Lacalamita.
+\newblock Llm-ci: Assessing contextual integrity norms in language models.
+\newblock {\em arXiv preprint arXiv:2409.03735}, 2024.
+
+\bibitem{steffen2020netdice}
+Samuel Steffen, Timon Gehr, Petar Tsankov, Laurent Vanbever, and Martin~T.
+  Vechev.
+\newblock Probabilistic verification of network configurations.
+\newblock In {\em {SIGCOMM}}, 2020.
+
+\bibitem{subramonyam2024bridging}
+Hari Subramonyam, Roy Pea, Christopher Pondoc, Maneesh Agrawala, and Colleen
+  Seifert.
+\newblock Bridging the gulf of envisioning: Cognitive challenges in prompt
+  based interactions with llms.
+\newblock In {\em Proceedings of the CHI Conference on Human Factors in
+  Computing Systems}, pages 1--19, 2024.
+
+\bibitem{tang2021campion}
+Alan Tang, Siva Kesava~Reddy Kakarla, Ryan Beckett, Ennan Zhai, Matt Brown,
+  Todd~D. Millstein, Yuval Tamir, and George Varghese.
+\newblock Campion: debugging router configuration differences.
+\newblock In {\em {ACM} {SIGCOMM} 2021 Conference}, 2021.
+
+\bibitem{taylor2023galactica}
+Ross Taylor, Marcin Kardas, Guillem Cucurull, Thomas Scialom, Anthony
+  Hartshorn, Elvis Saravia, Andrew Poulton, Viktor Kerkez, and Robert Stojnic.
+\newblock Galactica: A large language model for science. arxiv 2022.
+\newblock {\em arXiv preprint arXiv:2211.09085}, 10, 2023.
+
+\bibitem{tian2024examining}
+Xiaoyi Tian, Amogh Mannekote, Carly~E Solomon, Yukyeong Song, Christine~Fry
+  Wise, Tom Mcklin, Joanne Barrett, Kristy~Elizabeth Boyer, and Maya Israel.
+\newblock Examining llm prompting strategies for automatic evaluation of
+  learner-created computational artifacts.
+\newblock In {\em Proceedings of the 17th International Conference on
+  Educational Data Mining}, pages 698--706, 2024.
+
+\bibitem{touvron2023llama}
+Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne
+  Lachaux, Timoth{\'e}e Lacroix, Baptiste Rozi{\`e}re, Naman Goyal, Eric
+  Hambro, Faisal Azhar, et~al.
+\newblock Llama: Open and efficient foundation language models.
+\newblock {\em arXiv preprint arXiv:2302.13971}, 2023.
+
+\bibitem{vaswani2017attention}
+A~Vaswani.
+\newblock Attention is all you need.
+\newblock {\em Advances in Neural Information Processing Systems}, 2017.
+
+\bibitem{wang2024netconfeval}
+Changjie Wang, Mariano Scazzariello, Alireza Farshin, Simone Ferlin, Dejan
+  Kosti{\'c}, and Marco Chiesa.
+\newblock Netconfeval: Can llms facilitate network configuration?
+\newblock {\em Proceedings of the ACM on Networking}, 2(CoNEXT2):1--25, 2024.
+
+\bibitem{wang2024identifying}
+Zehao Wang, Dong~Jae Kim, and Tse-Hsun Chen.
+\newblock Identifying performance-sensitive configurations in software systems
+  through code analysis with llm agents.
+\newblock {\em arXiv preprint arXiv:2406.12806}, 2024.
+
+\bibitem{xu2023netcov}
+Xieyang Xu, Weixin Deng, Ryan Beckett, Ratul Mahajan, and David Walker.
+\newblock Test coverage for network configurations.
+\newblock In {\em 20th {USENIX} Symposium on Networked Systems Design and
+  Implementation ({NSDI})}, 2023.
+
+\bibitem{xue2024repeat}
+Fuzhao Xue, Yao Fu, Wangchunshu Zhou, Zangwei Zheng, and Yang You.
+\newblock To repeat or not to repeat: Insights from scaling llm under
+  token-crisis.
+\newblock {\em Advances in Neural Information Processing Systems}, 36, 2024.
+
+\bibitem{ye2020hoyan}
+Fangdan Ye, Da~Yu, Ennan Zhai, Hongqiang~Harry Liu, Bingchuan Tian, Qiaobo Ye,
+  Chunsheng Wang, Xin Wu, Tianchen Guo, Cheng Jin, Duncheng She, Qing Ma, Biao
+  Cheng, Hui Xu, Ming Zhang, Zhiliang Wang, and Rodrigo Fonseca.
+\newblock Accuracy, scalability, coverage: {A} practical configuration verifier
+  on a global {WAN}.
+\newblock In {\em SIGCOMM}, 2020.
+
+\bibitem{yu2024breaking}
+Yao-Ching Yu, Chun-Chih Kuo, Ziqi Ye, Yu-Cheng Chang, and Yueh-Se Li.
+\newblock Breaking the ceiling of the llm community by treating token
+  generation as a classification for ensembling.
+\newblock {\em arXiv preprint arXiv:2406.12585}, 2024.
+
+\bibitem{zhang2022sre}
+Peng Zhang, Dan Wang, and Aaron Gember{-}Jacobson.
+\newblock Symbolic router execution.
+\newblock In Fernando Kuipers and Ariel Orda, editors, {\em {ACM} {SIGCOMM}
+  Conference}, 2022.
+
+\end{thebibliography}

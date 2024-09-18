@@ -208,7 +208,7 @@ where \( n \) is the number of unique values associated with the configuration p
 
 
 Example: For the parameter Timeout, where values like 1000, 2000, and 3000 are used, if the majority lack associated definitions, they are treated as pre-defined. Conversely, for a parameter like ImportPolicy, where values such as PolicyA, PolicyB, and 1000 (as a policy name) are used, if most have contextual definitions, all values under that parameter are treated as user-defined.
-\end{enumerate}
+
 
 By combining existence-based checks with a majority-voting mechanism, we can effectively differentiate between pre-defined and user-defined parameter values in network configurations. This method ensures that the context extracted for LLM analysis is both relevant and accurate, thereby enhancing performance and reducing computational costs. Moreover, this approach maintains consistency within the configuration, ensuring that similar parameters are uniformly treated across different contexts.
 
