@@ -63,16 +63,16 @@ configurations---a significant amount of \textit{generic configuration
 context} is already embedded in large-scale pre-trained models
 (PTMs)~\cite{qiu2020pre}. However, such pre-learned generic context often
 needs to be supplemented with \textit{network-specific context} included in the query prompts, which details
-the actual configurations within the current configuration file under
+the actual statements within the current configuration(s) under
 analysis. 
 Including this network-specific context in the prompt to the LLM is essential
 for detecting misconfigurations that are specific to the device or network
 being checked.
 However, state-of-the-art 
-approaches, such as feeding the entire file into a single
+approaches, such as feeding a device's entire configuration into a single
 prompt~\cite{lican,li2024long} can result in context and token overload,
-diluting the model's focus. On the other hand, partitioning a single
-configuration file into multiple
+diluting the model's focus. On the other hand, partitioning a
+device's configuration into multiple
 prompts~\cite{lian2023configuration,chen2024automatic,wang2024identifying}
 may cause the LLM to ignore dependencies between configuration lines,
 resulting in failures to detect certain misconfigurations.
@@ -82,9 +82,9 @@ resulting in failures to detect certain misconfigurations.
 % for accurate router misconfiguration detection. We identify three key
 % challenges in realizing this framework and provide solutions for them:
 
-In this paper, we address the problem of precisely extracting and integrating network-specific context into LLM prompts to enhance the accuracy of router misconfiguration detection by introducing the
+In this paper, we address the problem of precisely extracting and integrating network-specific context into LLM prompts to enhance the accuracy of router misconfiguration detection. We introduce the
 Context-Aware Iterative Prompting (\sysname{}) framework, which
-offers solutions to three key challenges in this process:
+solves three key challenges in this process:
 
 \mypara{Challenge 1: Automatic and Accurate Context Mining} Network
 configurations are often lengthy and
@@ -133,7 +133,7 @@ We evaluate our framework through two distinct case studies.
 %: (1) synthetic change verification: 
 % First, using configuration snapshots from real networks, we introduce {\em synthetic} modifications to simulate potential changes that network operators may make (both correct and incorrect). 
 First, using configuration snapshots from real networks, we introduce {\em synthetic} misconfigurations that mirror potential operator errors. 
-We demonstrate that \sysname{} accurately infers and detects these misconfigurations, with more than 30\%
+We demonstrate that \sysname{} accurately infers and detects these misconfigurations, with at least 30\% more
 accuracy than conventional partition-based LLM approach, model checkers, and consistency checkers.
 %(2) comprehensive real configuration snapshot verification: 
 % Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network, and 
