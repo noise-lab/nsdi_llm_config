@@ -14,10 +14,22 @@
 
 Model checkers and consistency checkers detect critical errors in router
     configurations, but these tools require significant manual effort to
-    develop and maintain. LLM-based Q\&A models have emerged as a promising
-    alternative, because transformer-based models pre-trained on vast datasets
-    include context for interpreting router configurations. Yet, detecting
-    misconfigurations often requires network-specific context from the actual
+    develop and maintain. 
+    % LLM-based Q\&A models have emerged as a promising
+    % alternative, because transformer-based models pre-trained on vast datasets
+    % include context for interpreting router configurations.
+    LLM-based Q\&A models have emerged as a promising 
+    alternative, allowing users to query configurations 
+    through prompts and receive answers based on learned 
+    patterns, thanks to transformer models pre-trained on 
+    vast datasets that provide generic configuration context for interpreting 
+    router configurations.
+    % Yet, detecting
+    % misconfigurations often requires network-specific context from the actual
+    % configurations to enable accurate inference.
+    Yet, current methods for prompting these LLMs often
+    do not provide enough network-specific context 
+    from the actual
     configurations to enable accurate inference.
     We introduce a Context-Aware Iterative Prompting (\sysname{}) framework that
     automates network-specific context extraction and optimizes LLM prompts
@@ -26,8 +38,14 @@ Model checkers and consistency checkers detect critical errors in router
     hierarchical configuration files, (2) accurately distinguishing between
     pre-defined and user-defined parameter values to prevent irrelevant
     context from being introduced, and (3) managing context overload with
-    iterative, guided interactions with the model. Our evaluations using
-    synthetic and real-world configurations show that \sysname{} significantly
-    improves the accuracy of LLM-based misconfiguration detection,
-    outperforming or matching existing methods across all tested scenarios.
+    iterative, guided interactions with the model.
+    % Our evaluations using
+    % synthetic and real-world configurations show that \sysname{} significantly
+    % improves the accuracy of LLM-based misconfiguration detection,
+    % outperforming or matching existing methods across all tested scenarios.
+    Our evaluations using
+    synthetic and real-world configurations show that \sysname{}
+    improves the accuracy of LLM-based misconfiguration detection
+    by more than 30\%, uncovering over 20 cases of previous undetected misconfigurations in real-world configurations.
+
 \end{abstract}
