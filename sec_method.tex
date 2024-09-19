@@ -8,28 +8,52 @@
     \label{fig:overview}
 \end{figure*}
 
-To address the limitations of partition-based prompting, we design Context-Aware Iterative Prompting (\sysname{}), which consists of two components as shown in Figure~\ref{fig:overview}: a context mining component and an iterative prompting component. These components work together to automate the process of context extraction and prompt interaction with LLMs, enabling more accurate router misconfiguration detection.
+To address the limitations of partition-based prompting, we design
+Context-Aware Iterative Prompting (\sysname{}), which has two components, as
+shown in Figure~\ref{fig:overview}: a context mining component and an
+iterative prompting component. These components work together to automate the
+process of context extraction and prompt interaction with LLMs, enabling more
+accurate router misconfiguration detection.
 
 
-\mypara{1. Context Mining Component}
-In this phase, \sysname{} automatically mines all relevant context for a given configuration line under examination. Relevance here refers to configurations that, while not necessarily directly related, provide important insights—such as neighboring configurations, similar lines applied in different contexts, or referenceable configurations that define key parameters.
+\mypara{1. Context Mining Component} In this phase, \sysname{} mines all
+relevant context for a given configuration line under examination. Relevance
+here refers to configurations that, while not necessarily directly related,
+provide important insights, such as neighboring configurations, similar lines
+applied in different contexts, or referenceable configurations that define key
+parameters.
 
 % This context mining is designed to be both efficient and precise, extracting only the most relevant data from the configuration file without flooding the system with unnecessary information.
 
-\mypara{2. Iterative Prompting Component}
-Once the relevant context has been mined, the online component engages the LLM through an iterative prompting process. Instead of overwhelming the model with all the extracted context at once, \sysname{} interacts with the LLM in a guided, sequential manner.
+\mypara{2. Iterative Prompting Component} Once the relevant context has been
+mined, the online component engages the LLM through an iterative prompting
+process. Instead of overwhelming the model with all the extracted context at
+once, \sysname{} interacts with the LLM in a guided, sequential manner.
 
 
 
-We detail the challenges encountered in designing these two components and present the solutions.
+We now explain the challenges encountered in designing these two components and present the solutions.
 % that enable \sysname{} to perform effective context extraction and interactive prompting for misconfiguration detection.
 
-\subsection{Context Mining}\label{mining_method}
-\subsubsection{Challenge 1 - Efficient and accurate context mining}
-\label{challenge_1}
-Configuration files are often lengthy and complex, consisting of multiple interrelated lines that define various aspects of a system's behavior. When analyzing a specific configuration line, it is crucial to efficiently identify and extract the relevant context to reduce the computational burden on LLMs and minimize the risk of introducing irrelevant information that could degrade the accuracy of misconfiguration detection. This task is challenging because, while these configurations are typically written in a machine and human-readable format, automating the process of context extraction requires a deep understanding of the hierarchical and interconnected nature of the configuration data. For example, in a network configuration, a line that specifies an access control rule might be dependent on prior lines that define network segments or user roles. Without properly extracting and including this context in prompt, the LLM might misinterpret the rule, leading to false positives or missed misconfigurations.
+\subsection{Context Mining}\label{mining_method} \subsubsection{Challenge 1 -
+Efficient and accurate context mining} \label{challenge_1} Configuration files
+are often lengthy and complex, consisting of multiple related and
+interdependent lines that define various aspects of the behavior of the
+corresponding network device. When
+analyzing a specific configuration line, efficiently identifying
+extracting the relevant context can reduce the computational burden on LLMs
+and minimize the risk of introducing irrelevant information that could degrade
+the accuracy of misconfiguration detection. This task is challenging because,
+although these configurations are typically written in a machine and
+human-readable format, automating the process of context extraction requires a
+deep understanding of the hierarchical and interconnected nature of the
+configuration data. For example, in a network configuration, a line that
+specifies an access control rule might depend on prior lines that define
+network segments or user roles. Without properly extracting and including this
+context in prompt, the LLM might misinterpret the rule, leading to false
+positives or missed misconfigurations.
 
-To address this challenge, we leverage two observations:
+To address this challenge, we rely on two observations:
 
 \mypara{1. Hierarchical Structure of Configuration Files}
     Configuration files are typically written in a structured, hierarchical format that can be effectively modeled as a tree, as shown in the example in Figure~\ref{fig:tree}. In this tree representation (\(T\)), each node (\(V\)) corresponds to a specific configuration element, and edges represent the relationships or dependencies between these elements. Let any unique path \(
@@ -42,14 +66,22 @@ P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V
     \label{fig:tree}
 \end{figure}
 
-    \mypara{2. Contextual Relevance from Different Aspects} We make the observation that the context related to any given configuration line can be categorized into three types based on its position and relation within the configuration file as shown in the example in Figure~\ref{fig:context_mine}, with increasing levels of complexity to mine. They each providing unique insights that contribute to accurate misconfiguration detection: 
+    \mypara{2. Contextual Relevance from Different Aspects} We observe that
+    the context related to any given configuration line falls into one of
+    three types, based on its position and relation within the
+    configuration file as shown in the example in
+    Figure~\ref{fig:context_mine}, with increasing levels of complexity to
+    mine. They each providing unique insights that contribute to accurate
+    misconfiguration detection: 
     
-    \mysubpara{Neighboring Configurations} are those that are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file, making them straightforward to extract.
+    \mysubpara{Neighboring Configurations} are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file, making them straightforward to extract.
         
     \mysubpara{Similar Configurations} involve the same type of parameter or function as the configuration line under review but are applied in different contexts within the network. For example, consider configurations that assign IP addresses to different interfaces across various routers in the network. Even though the interfaces and routers may differ, the principles governing IP address assignment remain the same. By comparing these similar configurations, one can detect inconsistencies or deviations from standard practices that might indicate a misconfiguration. This type of context is essential for ensuring that configuration practices are consistent across the network, reducing the risk of errors that could lead to network outages or performance degradation. Mining these configurations is more challenging because, unlike neighboring configurations, they are not located adjacently but must be identified based on functional similarities.
 
     \mysubpara{Referenceable Configurations}
-    provide essential definitions or additional information related to the parameter value being examined. In the network domain, this context is crucial for understanding how specific values are applied across different parts of the network configuration. For example, if a parameter value specifies an import policy, referenceable configurations might include other lines where this policy is defined or where its behavior is modified. By examining these configurations, one can gain a deeper understanding of how the policy influences routing decisions or interacts with other network elements, ensuring that the configuration is applied correctly and consistently throughout the network.
+    provide essential definitions or additional information related to the
+    parameter value being examined. In the network domain, this context is
+    important for understanding how specific values are applied across different parts of the network configuration. For example, if a parameter value specifies an import policy, referenceable configurations might include other lines where this policy is defined or where its behavior is modified. By examining these configurations, one can gain a deeper understanding of how the policy influences routing decisions or interacts with other network elements, ensuring that the configuration is applied correctly and consistently throughout the network.
     Referenceable configurations are the most difficult to mine because they often involve indirect references and dependencies that are not immediately apparent, requiring a thorough and sometimes recursive analysis to trace how a value or policy is used across various parts of the configuration file.
 
 \begin{figure}[t]
@@ -150,13 +182,15 @@ indicating that \( PolicyX \) is further applied or modified by the filter confi
 
 % By structuring the context mining process in this manner, we can efficiently and accurately extract the most relevant information for any given configuration line, enhancing the performance and accuracy of LLM-based configuration verification tools. This approach ensures that the LLM receives a well-curated set of contextually relevant data, improving its ability to detect sophisticated misconfigurations that depend on a comprehensive understanding of the configuration file.
 
-However, one of the key problems in extracting referenceable configurations is the risk of pulling in irrelevant context, particularly because the process doesn't differentiate between pre-defined parameter values inherent to the configuration language and custom values defined by network administrators. 
+One of the most important problems in extracting referenceable configurations
+is the risk of incorporating irrelevant context, particularly because the
+process does not distinguish between pre-defined parameter values inherent to the configuration language and custom values defined by network administrators. 
 % This lack of distinction can lead to incorrect or unnecessary context being extracted, as the system may treat a built-in parameter value the same as a user-defined one, resulting in inaccurate or misleading insights. 
 We now proceed to discuss this problem in more detail and present our solution.
 
 \subsubsection{Challenge 2 - Referenceable Parameter Value Ambiguity}
 
-In network configurations, parameter values can broadly be categorized into two types: \textit{pre-defined} values and \textit{user-defined} values. Pre-defined values are those that are built into the configuration language itself, such as boolean flags (True vs. False) or access control decisions (Allow vs. Deny). These values are universally understood by the configuration parser and typically do not require any additional definition or context within the configuration file. On the other hand, user-defined values are customizable by the network administrator and can vary widely depending on the specific requirements of the network. These include values such as IP addresses, timeout intervals, VLAN IDs, and other numeric or alphanumeric identifiers. However, there rarely exists documentation explicit specifying these types and requires a lot of manual examination, which is hard to scale.
+In network configurations, parameter values have two types: \textit{pre-defined} values and \textit{user-defined} values. Pre-defined values are those that are built into the configuration language itself, such as boolean flags (True vs. False) or access control decisions (Allow vs. Deny). These values are understood by the configuration parser and typically do not require any additional definition or context within the configuration file. On the other hand, user-defined values are customizable by the network administrator and can vary widely depending on the specific requirements of the network. These include values such as IP addresses, timeout intervals, VLAN IDs, and other numeric or alphanumeric identifiers. However, there rarely exists documentation explicit specifying these types and requires a lot of manual examination, which is hard to scale.
 
 When extracting context for referenceable configurations,
 failing to differentiate between pre-defined and user-defined values can introduce irrelevant or misleading information into the extracted context.
@@ -164,7 +198,6 @@ For instance, a pre-defined value like True is universally recognized by the con
 Conversely, user-defined values like IP addresses, a prefix limit (\eg, "maximum-prefixes 500" in a BGP configuration) or a timeout interval (\eg, 30 seconds) are specific to the network and typically set by network operators. These values may appear in routing tables, NAT rules, or timeout policies, with their significance depending on how they’re defined and applied. In this case, mining should focus on retrieving all related configurations that define or use these values.
 
 Distinguishing between pre-defined and user-defined values is crucial to avoid extracting irrelevant context, which can lead to several issues:
-
 
 \begin{enumerate}
     \item \textit{Context Contamination}: 
@@ -238,7 +271,7 @@ For example, in detecting routing policy misconfigurations, a single misconfigur
 
 
 \mypara{Solution}
-To combat these issues, \sysname{} implements an iterative, sequential prompting framework that allows the model to request and process relevant context in stages. Instead of overwhelming the model with all available context at once, \sysname{} enables the model to actively request additional information as needed. This approach enhances the model’s ability to maintain focus, coherence, and overall detection accuracy by allowing it to prioritize and process context more effectively, ensuring that only the most pertinent information is presented at each step.
+To address these issues, \sysname{} implements an iterative, sequential prompting framework that allows the model to request and process relevant context in stages. Instead of overwhelming the model with all available context at once, \sysname{} enables the model to actively request additional information as needed. This approach enhances the model’s ability to maintain focus, coherence, and overall detection accuracy by allowing it to prioritize and process context more effectively, ensuring that only the most pertinent information is presented at each step.
 
 \mysubpara{1. Initial Prompting:} The process begins by feeding the LLM the specific configuration line under review, along with targeted instructions about the type of misconfiguration we are checking for (\eg, syntax errors, dependency conflicts, or just general misconfiguration). This prompt is concise, providing only the critical line and the request as shown in the Figure~\ref{fig:initial_prompt}. This reduces the initial information load and allows the model to focus on the core issue.
 
