@@ -12,6 +12,22 @@
 % The limitations have led to the adoption of LLM-based Q\&A models, which leverage transformer-based architectures to process and interpret both the syntax and semantics of configurations. Transformers, with their self-attention mechanisms, excel at capturing long-range dependencies and contextual relationships within sequences of text by pre-training on vast datasets, including networking-related documents.
 % Yet, the prevalent use of partition-based prompting in LLMs—where configuration files are divided into isolated sections for analysis—fails to account for the interdependencies and contextual relationships that are spread across the configuration file, leading to incomplete or inaccurate misconfiguration detection.
 
-Model checkers and consistency checkers effectively detect critical errors in router configurations, but these tools require significant manual effort to develop and maintain. LLM-based Q\&A models have emerged as a promising alternative, because transformer-based models pre-trained on vast datasets include context for interpreting router configurations. However, detecting misconfigurations often requires network-specific context from the actual configurations for accurate inference.
-We introduce a Context-Aware Iterative Prompting (\sysname{}) framework that automates network-specific context extraction and optimizes LLM prompts for more precise router misconfiguration detection. \sysname{} addresses three core challenges: (1) efficiently mining relevant context from complex, hierarchical configuration files, (2) accurately distinguishing between pre-defined and user-defined parameter values to prevent irrelevant context from being introduced, and (3) managing context overload by employing iterative, guided interactions with the model. Our evaluations using synthetic and real-world configurations show that \sysname{} significantly improves the accuracy of LLM-based misconfiguration detection, outperforming or matching existing methods across all tested scenarios.
+Model checkers and consistency checkers detect critical errors in router
+    configurations, but these tools require significant manual effort to
+    develop and maintain. LLM-based Q\&A models have emerged as a promising
+    alternative, because transformer-based models pre-trained on vast datasets
+    include context for interpreting router configurations. Yet, detecting
+    misconfigurations often requires network-specific context from the actual
+    configurations to enable accurate inference.
+    We introduce a Context-Aware Iterative Prompting (\sysname{}) framework that
+    automates network-specific context extraction and optimizes LLM prompts
+    for more precise router misconfiguration detection. \sysname{} addresses
+    three challenges: (1) efficiently mining relevant context from complex,
+    hierarchical configuration files, (2) accurately distinguishing between
+    pre-defined and user-defined parameter values to prevent irrelevant
+    context from being introduced, and (3) managing context overload with
+    iterative, guided interactions with the model. Our evaluations using
+    synthetic and real-world configurations show that \sysname{} significantly
+    improves the accuracy of LLM-based misconfiguration detection,
+    outperforming or matching existing methods across all tested scenarios.
 \end{abstract}
