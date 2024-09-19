@@ -3,7 +3,7 @@
 To evaluate the effectiveness of \sysname{}, we present two test scenarios as case studies and compare \sysname{} with state-of-the-art solutions. These include:
 
 \begin{enumerate}
-    \item \textit{Synthetic Change Verification}: Synthetic modifications are introduced into real network configuration snapshots to simulate potential operator-introduced changes (both correct and incorrect). We run \sysname{} on these specific configurations changes to evaluate the model’s ability to accurately infer and detect misconfigurations.
+    \item \textit{Synthetic Misconfiguration Verification}: Synthetic misconfigurations are introduced into real network configuration snapshots. We run \sysname{} on these specific configurations before and after the misconfigurations are introduced to evaluate the model’s ability to accurately infer and detect misconfigurations.
     \item \textit{Comprehensive Real Configuration Snapshot Verification}: \sysname{} is run on configuration snapshots from a medium-scale campus network to detect overlooked misconfigurations in a real-world setting. This covers both \textit{targeted} misconfiguration detection, where we focused on known issues like VLAN assignment errors, and \textit{non-targeted} detection, which involved scanning for general misconfigurations without prior knowledge of the issues.
 \end{enumerate}
 
@@ -24,10 +24,11 @@ We opt not to use the GPU, as the computational cost of the context extraction a
 \textit{Specifications}---Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
 
 \subsubsection{Prompting and Query Setup}
-We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration file to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (e.g., syntax issues, policy conflicts) or general misconfigurations. Example prompting, queries, and responses are shown in Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}.
+We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration lines to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (\eg, syntax issues, policy conflicts) or general misconfigurations. Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}
+show example prompting, queries, and responses.
 
-\subsection{Case Study 1: Synthetic Change Verification}
-We first evaluate \sysname{} on synthetically introduced configuration changes, representing both correct and incorrect modifications. Synthetic changes allow us to systematically test various misconfiguration types and assess detection accuracy in a controlled environment.
+\subsection{Case Study 1: Synthetic Misconfiguration Verification}
+We first evaluate \sysname{} on synthetically introduced misconfigurations, which allows us to systematically test various misconfiguration types and assess detection accuracy in a controlled environment.
 We broadly categorize router misconfigurations into three types:
 \begin{itemize}
     \item \textit{Syntax errors} occur when the configuration does not adhere to the expected format or structure---e.g., a missing bracket or misused keyword in a BGP routing policy.

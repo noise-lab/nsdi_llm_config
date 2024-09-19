@@ -8,7 +8,7 @@
     \label{fig:overview}
 \end{figure*}
 
-To address the limitations of partition-based prompting, we design Context-Aware Iterative Prompting (\sysname{}), which consists of two components as shown in Figure~\ref{fig:overview}: an context mining component and an iterative prompting component. These components work together to automate the process of context extraction and prompt interaction with LLMs, enabling more accurate router misconfiguration detection.
+To address the limitations of partition-based prompting, we design Context-Aware Iterative Prompting (\sysname{}), which consists of two components as shown in Figure~\ref{fig:overview}: a context mining component and an iterative prompting component. These components work together to automate the process of context extraction and prompt interaction with LLMs, enabling more accurate router misconfiguration detection.
 
 
 \mypara{1. Context Mining Component}
@@ -67,7 +67,7 @@ Given the categorization of relevant contexts and the hierarchical tree model, w
     
     The common ancestry level, or shared node depth, can be adjusted to control how much context is mined. Let us define \( m \) as the number of shared nodes from the root, then neighboring configurations are defined as:
 \begin{multline*}
-N_m(P) = \{ P' \in T \mid P' = V_0 \rightarrow  V_1(P')\dots \rightarrow V_m(P') \rightarrow \\ V_{m+1}(P') \rightarrow \dots \rightarrow V_k(P')= v_k(P') \},
+N_m(P) = \{ P' \in T \mid P' = V_1 \rightarrow  V_2(P')\dots \rightarrow V_m(P') \rightarrow \\ V_{m+1}(P') \rightarrow \dots \rightarrow V_k(P')= v_k(P') \},
 \end{multline*}
 
 where \( P' \) shares the first \( m \) nodes with \( P \), but the nodes following \( V_m(P') \) (denoted as \( V_{m+1}(P'), V_{m+2}(P'), \dots \)) can differ from the remaining nodes in \( P \), and 
@@ -79,11 +79,11 @@ where \( P' \) shares the first \( m \) nodes with \( P \), but the nodes follow
 Adjusting \( m \) allows for control over the size and relevance of the neighboring context.
 A common choice is to set \(V_m(P) = V_m(P') = V_{k-1}(P) \), which captures sufficient context while avoiding unnecessary complexity. For example. let the configuration path under review be represented as
 \[
-P = \{V_0 \rightarrow A \rightarrow B \rightarrow C \rightarrow D = v_D \} \mid V_{k-1}(P) = C
+P = \{V_1 \rightarrow A \rightarrow B \rightarrow C \rightarrow D = v_D \} \mid V_{k-1}(P) = C
 \]
 The set of neighboring paths \( N(P) \) can be defined as:
 \[
-N(P) = \{ P' \in T \mid P' = V_0 \rightarrow A \rightarrow B \rightarrow C \rightarrow D' = v_{D'}, D' \neq D \}
+N(P) = \{ P' \in T \mid P' = V_1 \rightarrow A \rightarrow B \rightarrow C \rightarrow D' = v_{D'}, D' \neq D \}
 \]
 For example, consider a configuration line that defines the IP address for a particular interface:
 \begin{multline*}
