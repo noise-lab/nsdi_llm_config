@@ -8,7 +8,7 @@ Detecting router misconfigurations is crucial for maintaining the stability,
 security, and performance of network infrastructures. Whether due to
 overlooked errors in existing setups or mistakes introduced during
 configuration changes, misconfigurations can lead to black holes, unintended
-network access, inefficient routes, and other performance and security issues
+network access, inefficient routes, and other performance and security
 issues.  For example, a misconfigured access control list (ACL) may allow
 unauthorized traffic, exposing the network to potential attacks; a buggy
 routing policy may create loops, rendering services inaccessible and degrading
@@ -28,7 +28,7 @@ within and across devices and flag inconsistencies and deviations from best
 practices. LLM-based Q\&A
 tools~\cite{bogdanov2024leveraging,chen2024automatic,wang2024identifying,liu2024large,
 wang2024netconfeval, lian2023configuration} parse configuration files and
-query pre-trained sequential transformer models to detect syntax and subtle
+query pre-trained sequential transformer models through prompts to detect syntax and subtle
 semantic issues.
 
 A fundamental feature of all configuration checkers is their reliance on {\em
@@ -62,11 +62,13 @@ includes protocol standards, vendor documentation, and sample
 configurations---a significant amount of \textit{generic configuration
 context} is already embedded in large-scale pre-trained models
 (PTMs)~\cite{qiu2020pre}. However, such pre-learned generic context often
-needs to be supplemented with \textit{network-specific context}, which details
+needs to be supplemented with \textit{network-specific context} included in the query prompts, which details
 the actual configurations within the current configuration file under
-analysis. Including this network-specific context in the prompt to the LLM is essential
+analysis. 
+Including this network-specific context in the prompt to the LLM is essential
 for detecting misconfigurations that are specific to the device or network
-being checked. State-of-the-art 
+being checked.
+However, state-of-the-art 
 approaches, such as feeding the entire file into a single
 prompt~\cite{lican,li2024long} can result in context and token overload,
 diluting the model's focus. On the other hand, partitioning a single
@@ -74,24 +76,30 @@ configuration file into multiple
 prompts~\cite{lian2023configuration,chen2024automatic,wang2024identifying}
 may cause the LLM to ignore dependencies between configuration lines,
 resulting in failures to detect certain misconfigurations.
-Therefore, network-specific context must be carefully extracted and
-structured to ensure proper focus and coverage.
 
-In this paper, we introduce a new framework, Context-Aware Iterative Prompting
-(\sysname{}), to automate context extraction and optimize prompting to LLMs
-for accurate router misconfiguration detection. We identify three key
-challenges in realizing this framework and provide solutions for them:
+% In this paper, we introduce a new framework, Context-Aware Iterative Prompting
+% (\sysname{}), to automate context extraction and optimize prompting to LLMs
+% for accurate router misconfiguration detection. We identify three key
+% challenges in realizing this framework and provide solutions for them:
+
+In this paper, we address the problem of precisely extracting and integrating network-specific context into LLM prompts to enhance the accuracy of router misconfiguration detection by introducing the
+Context-Aware Iterative Prompting (\sysname{}) framework, which
+offers solutions to three key challenges in this process:
 
 \mypara{Challenge 1: Automatic and Accurate Context Mining} Network
 configurations are often lengthy and
 complex~\cite{benson2009complexitymetrics}, with interrelated lines that
 require careful context extraction. The challenge lies in automatically
 identifying and extracting relevant context to reduce computational costs and
-avoid introducing irrelevant information that could impair the accuracy of
+avoid introducing irrelevant information in prompts that could impair the accuracy of
 misconfiguration detection. \textbf{Solution}: We address this challenge by
 leveraging the hierarchical structure of configuration files, modeling them as
 trees, where each line is a unique path from the root to a parameter value.
-This representation allows us to systematically mine three types of
+% This representation allows us to systematically mine three types of
+% context---neighboring, similar, and referenced configuration
+% statements---ensuring the LLM receives the most relevant information for
+% accurate analysis.
+This representation allows us to systematically mine and adhere to three core types of
 context---neighboring, similar, and referenced configuration
 statements---ensuring the LLM receives the most relevant information for
 accurate analysis.
@@ -111,7 +119,7 @@ different contexts.
 
 \mypara{Challenge 3 - Managing Context Overload in Prompts}
 Even with precise context extraction, the volume of relevant information can
-be large. 
+be large to fit in a single prompt. 
 %, risking prompt overload when fed into LLMs. Excessive context 
 Feeding excess context into LLMs can dilute relevance, reduce coherence, and degrade the model’s performance.
 %, necessitating strategies to manage and streamline the input effectively. 
@@ -119,10 +127,14 @@ Feeding excess context into LLMs can dilute relevance, reduce coherence, and deg
 by allowing the LLM to iteratively request specific types of context, refining
 the prompt based on the model’s feedback. This approach enhances the model’s
 ability to focus on the most relevant information, leading to more precise
-misconfiguration detection and reducing the likelihood for context overload..
+misconfiguration detection and reducing the likelihood for context overload.
 
 We evaluate our framework through two distinct case studies.
 %: (1) synthetic change verification: 
-First, using configuration snapshots from real networks, we introduce {\em synthetic} modifications to simulate potential changes that network operators may make (both correct and incorrect). We demonstrate that the model accurately infers and detects these changes. 
+% First, using configuration snapshots from real networks, we introduce {\em synthetic} modifications to simulate potential changes that network operators may make (both correct and incorrect). 
+First, using configuration snapshots from real networks, we introduce {\em synthetic} misconfigurations that mirror potential operator errors. 
+We demonstrate that \sysname{} accurately infers and detects these changes, with more than 30\%
+accuracy than conventional partition-based LLM approach, model checkers, and consistency checkers.
 %(2) comprehensive real configuration snapshot verification: 
-Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network to detect overlooked misconfigurations in {\em real-world} environments. Our evaluation shows that \sysname{} consistently outperforms or matches the accuracy of existing methods across all scenarios.
+% Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network, and 
+Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network, and \sysname{} is able to detect over 20 cases of previous overlooked misconfigurations.

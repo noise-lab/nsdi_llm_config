@@ -218,19 +218,23 @@ By combining existence-based checks with a majority-voting mechanism, we can eff
 
 
 \subsection{Iterative Prompting}\label{prompting_method}
-As we transition from context mining to utilizing the extracted information in LLM prompts, the next challenge is how to feed this information into the model without overwhelming it. While extracting accurate and relevant context is essential, the model's ability to process that information effectively is just as crucial. A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information at once, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
+As we transition from context mining to utilizing the extracted information in LLM prompts, the next challenge is how to feed this information into the model without overwhelming it. While extracting accurate and relevant context is essential, the model's ability to process that information effectively is just as crucial.
+
+% A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information at once, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
 
 \subsubsection{Challenge 3 - Context Overload in Prompting}
 \label{challenge_3}
-
-Even with precise context extraction mechanisms we have in place, the extracted context can sometimes be extensive. When this large amount of context is provided to an LLM in a single prompt, the model can struggle to maintain focus, leading to several issues:
+A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
+Even with the precise context extraction mechanisms we have, the extracted context can sometimes be extensive. 
+% When this large amount of context is provided to an LLM in a single prompt, the model can struggle to maintain focus, leading to several issues:
+Feeding this large amount of context to an LLM can lead to several issues:
 \begin{enumerate}
     \item \textit{Dilution of Relevance}: The model might lose track of the most critical elements of the prompt, resulting in responses that are less accurate or less relevant. For instance, in a complex router configuration, key misconfiguration details could get buried in a flood of less relevant context.
     \item \textit{Loss of Coherence and Accuracy}: The model might generate responses that are disjointed or fail to address the core misconfiguration, as it attempts to process all the given information at once. This can lead to fragmented reasoning or erroneous conclusions when handling intricate dependencies in router settings. Additionally, LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can also severely impact performance.
     % \item \textit{Decreased Performance}: Providing too much context can overwhelm the model’s processing capabilities, degrading the overall quality of the output. LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can severely impact performance.
 \end{enumerate}
 
-For example, in detecting routing policy misconfigurations, a single misconfigured line may have dependencies across several sections of the file. If all related context is presented at once, the model can fail to prioritize the correct information, leading to missed or incorrect detection. State-of-the-art methods, such as prompt chaining, focus on guiding the model through incremental instructions, doesn't solve this issue, as it doesn't dynamically adjust the context based on the model's needs.
+For example, in detecting routing policy misconfigurations, a single misconfigured line may have dependencies across several sections of the file. Presenting all related context at once can cause the model to fail at prioritizing critical information, leading to missed/incorrect detection. STOA methods, such as prompt chaining, which guides the model through chained instructions, doesn't solve this issue, as it doesn't dynamically adjust or prioritize the context based on model needs.
 
 
 \mypara{Solution}
