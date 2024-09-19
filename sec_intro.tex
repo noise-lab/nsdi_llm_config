@@ -4,9 +4,48 @@
 \section{Introduction}
 \label{sec:intro}
 
-Misconfiguration detection in router configurations is crucial for maintaining the stability, security, and performance of network infrastructures. Whether due to overlooked errors in existing setups or mistakes introduced during configuration changes, misconfigurations can disrupt network behavior, leading to unintended access routes, inefficient routing paths, or even network outages. These disruptions not only compromise the network’s integrity but also result in costly downtimes or security breaches. For instance, a misconfigured access control list (ACL) could allow unauthorized traffic, exposing the network to potential attacks, while a poorly defined routing policy might create traffic loops, degrading network performance.
+Detecting router misconfigurations is crucial for the stability, security, and
+performance of network infrastructure. Whether due to overlooked errors in
+existing setups or mistakes introduced during configuration changes,
+misconfigurations can disrupt network behavior, leading to unintended access,
+inefficient routing paths, or even network outages. Such disruptions not only
+compromise the network’s integrity but may also introduce costly downtime or
+security breaches. For instance, a misconfigured access control list (ACL)
+could allow unauthorized traffic, exposing the network to potential attacks; a
+poorly defined routing policy might create traffic loops, resulting in network
+performance, increased congestion, or availability problems.
 
-Current methods for detecting misconfigurations in router configurations can be broadly classified into three categories: automated formal model checkers, data mining-based tools, and Large Language Model (LLM)-based Q\&A models. Model checkers can be either rule-based, including Batfish~\cite{fogel2015general} and rcc~\cite{feamster2005detecting}, or policy-based, such as Batfish, Minesweeper~\cite{beckett2017general}, Tiramisu~\cite{abhashkumar2020tiramisu}, and most of the other network configuration verifiers~\cite{kakarla2020finding,prabhu2020plankton, al2009network, ritchey2000using,al2011configchecker, jeffrey2009model} that have been developed. These verifiers are designed to validate configurations by checking their adherence to predefined rules and policies. While are highly effective, their performance is heavily dependent on the quality of the rules and policies being inputted, which require substantial domain expertise to define. Data mining-based tools, like Diffy~\cite{kakarla2024diffy}, Minerals~\cite{le2006minerals}, SelfStarter~\cite{kakarla2020finding}, and more~\cite{le2008detecting,le2006characterization}, take a different approach by deriving a universal model through graph-based or data mining techniques, assuming that any deviation from a standard configuration is a misconfiguration. While this method works well for maintaining uniformity across routers, it struggles with context-specific configurations that deviate from the norm for valid reasons. Finally, there are LLM-based Q\&A models~\cite{bogdanov2024leveraging,chen2024automatic,wang2024identifying,liu2024large, wang2024netconfeval}, such as Ciri~\cite{lian2023configuration}, that attempt to `understand' the syntax and semantic of configurations by treating misconfiguration detection as a sequential text generation task. These models leveraging transformer-based architectures~\cite{vaswani2017attention} to process input configurations as sequences of tokens and are pre-trained using large-scale datasets, including general text documents and network configuration texts. This allows the models to learn relationships between tokens (words or phrases) and their contexts through attention mechanisms, a key feature of transformer models.
+Current methods for detecting misconfigurations in router configurations fall
+into three categories: automated formal model checkers, data mining-based
+tools, and Large Language Model (LLM)-based Q\&A models. Model checkers can be
+either rule-based, such as Batfish~\cite{fogel2015general} and
+rcc~\cite{feamster2005detecting}; or policy-based, such as Batfish,
+Minesweeper~\cite{beckett2017general},
+Tiramisu~\cite{abhashkumar2020tiramisu}, and most of the other network
+configuration verifiers~\cite{kakarla2020finding,prabhu2020plankton,
+al2009network, ritchey2000using,al2011configchecker, jeffrey2009model} that
+have been developed. These verifiers are designed to validate configurations
+by checking their adherence to predefined rules and policies. While are highly
+effective, their performance is heavily dependent on the quality of the rules
+and policies being inputted, which require substantial domain expertise to
+define. Data mining-based tools, like Diffy~\cite{kakarla2024diffy},
+Minerals~\cite{le2006minerals}, SelfStarter~\cite{kakarla2020finding}, and
+more~\cite{le2008detecting,le2006characterization}, take a different approach
+by deriving a universal model through graph-based or data mining techniques,
+assuming that any deviation from a standard configuration is a
+misconfiguration. While this method works well for maintaining uniformity
+across routers, it struggles with context-specific configurations that deviate
+from the norm for valid reasons. Finally, there are LLM-based Q\&A
+models~\cite{bogdanov2024leveraging,chen2024automatic,wang2024identifying,liu2024large,
+wang2024netconfeval}, such as Ciri~\cite{lian2023configuration}, that attempt
+to `understand' the syntax and semantic of configurations by treating
+misconfiguration detection as a sequential text generation task. These models
+leveraging transformer-based architectures~\cite{vaswani2017attention} to
+process input configurations as sequences of tokens and are pre-trained using
+large-scale datasets, including general text documents and network
+configuration texts. This allows the models to learn relationships between
+tokens (words or phrases) and their contexts through attention mechanisms, a
+key feature of transformer models.
 
 
 Despite their strengths, each of these methods has significant weaknesses that limit their effectiveness in accurately detecting router misconfigurations. Model checkers are limited by the need for comprehensive and precise rule and policy definitions, which can be challenging in dynamic network environments~\cite{graf1990limits,baier2008principles}.
