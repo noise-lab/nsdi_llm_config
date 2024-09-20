@@ -3,7 +3,7 @@
 To evaluate the effectiveness of \sysname{}, we present two test scenarios as case studies and compare \sysname{} with state-of-the-art solutions. These include:
 
 \begin{enumerate}
-    \item \textit{Synthetic Misconfiguration Verification}: Synthetic misconfigurations are introduced into real network configuration snapshots. We run \sysname{} on these specific configurations before and after the misconfigurations are introduced to evaluate the model’s ability to accurately infer and detect misconfigurations.
+    \item \textit{Synthetic Misconfiguration Verification}: Synthetic misconfigurations are introduced into real network configuration snapshots. We run \sysname{} on specific configurations before and after the misconfigurations are introduced to evaluate the model’s ability to accurately infer and detect misconfigurations.
     \item \textit{Comprehensive Real Configuration Snapshot Verification}: \sysname{} is run on configuration snapshots from a medium-scale campus network to detect overlooked misconfigurations in a real-world setting. This covers both \textit{targeted} misconfiguration detection, where we focused on known issues like VLAN assignment errors, and \textit{non-targeted} detection, which involved scanning for general misconfigurations without prior knowledge of the issues.
 \end{enumerate}
 
@@ -11,6 +11,9 @@ We now introduce the setup for our evaluation and present the details of the cas
 
 
 \subsection{Evaluation Setup}
+
+In this section, we describe our evaluation setup.
+
 \subsubsection{Context Extraction Hardware Setup}
 
 
@@ -145,26 +148,28 @@ As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues,
 
 % The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN. The mismatch between the RD and VRF target can cause routing and forwarding inconsistencies, as the control plane may attempt to map traffic to the wrong VPN instance.
 
-\paragraph{Comparison Against Non-LLM-based Tools}
-Batfish performs well on syntax errors (75\% detection rate) but struggles
-with range violations and only partially detected D/C issues (2/8).
-This is because Batfish uses a rule-based model checker, which excels in detecting predefined
-syntax errors but is less effective in handling misconfigurations that involve contextual nuances, such as range violations or dependency conflicts. Specifically, Batfish is able
-to detect issues related to non-existent groups and policies
-(hard-coded into its rule checks) but missed more subtle D/C
-misconfigurations, like policy conflicts or filter dependencies.
+\paragraph{Comparison Against Non-LLM-based Tools} Batfish performs well on
+syntax errors (75\% detection rate) but struggles with range violations and
+only partially detected D/C issues (2/8).  Batfish uses a rule-based model
+checker, which excels in detecting predefined syntax errors but is less
+effective in handling misconfigurations that involve contextual nuances, such
+as range violations or dependency conflicts. Specifically, Batfish 
+detects issues related to non-existent groups and policies (hard-coded into its
+rule checks) but missed more subtle D/C misconfigurations, like policy
+conflicts or filter dependencies.
 
 Diffy performs poorly across all misconfigurations, with a 0/16 detection rate, due to its data-driven approach, which focuses on learning common usage patterns from configurations and flagging anomalies as potential bugs. While effective for detecting clear deviations from standard patterns in other configuration files,
 % Diffy struggles with context-dependent or subtle misconfigurations, such as dependency/conflict (D/C) issues, that require a deeper understanding of configuration context and dependencies. 
 complex issues like policy conflicts or range violations may not deviate from typical patterns but still be incorrect, which Diffy’s template-based anomaly detection cannot capture. Furthermore, Diffy's reliance on identifying deviations from learned patterns makes it less effective at detecting syntax errors and range violations. These types of misconfigurations often follow standard formatting and numerical values that may not stand out as anomalies, making them difficult for Diffy to detect without a granular understanding of configuration structure and constraints.
 
-Lastly, despite varying performance in detecting misconfigurations, all tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully marked all correctly configured lines as valid prior to the introduction of the synthetic errors, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
+Finally, despite varying performance in detecting misconfigurations, all tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully marked all correctly configured lines as valid prior to the introduction of the synthetic errors, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
 
 \subsection{Case Study 2: Comprehensive Real Configuration Snapshot Verification}
-To evaluate \sysname{} on real-world misconfiguration detection, we obtain Aruba router configuration snapshots from a medium-scale campus network. The objective here is twofold: (1) to verify the scalability of \sysname{} when applied to larger network configurations, and (2) to investigate whether \sysname{} can detect potential misconfigurations that have not yet been identified by existing tools.
+To evaluate \sysname{} on real-world misconfiguration detection, we obtain
+Aruba router configuration snapshots from a medium-scale campus network. We
+have two objectives: (1) to verify the scalability of \sysname{} when applied to larger network configurations, and (2) to investigate whether \sysname{} can detect potential misconfigurations that have not yet been identified by existing tools.
 
-
-In this case study, we perform two types of analysis, beginning with \textit{targeted misconfiguration detection:} A key aspect of this case study is the demonstration of \sysname{}'s flexibility in integrating additional context types under different scenarios. This is particularly useful when network operators have prior domain knowledge about specific misconfigurations they are trying to detect that fall outside of \sysname{}'s default context library.
+We perform two types of analysis, beginning with \textit{targeted misconfiguration detection:} A key aspect of this case study is the demonstration of \sysname{}'s flexibility in integrating additional context types under different scenarios. This is particularly useful when network operators have prior domain knowledge about specific misconfigurations they are trying to detect that fall outside of \sysname{}'s default context library.
 To illustrate this flexibility, we consult the network operators who provided the configuration snapshots. They were specifically interested in detecting incorrect `VLAN assignments' --- a type of misconfiguration that often requires a network-wide view. Such misconfigurations are usually identifiable only when considering the configurations of other devices in the same network, as deviations from uniform configurations can indicate potential issues.
 To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context'.  This context type mines  the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous. For this scenario, we modify the initial prompt to focus specifically on detecting `WRONG VLAN ASSIGNMENT'.
 
@@ -175,7 +180,7 @@ Example Intra-Router Consistency Context extracted:
 The second analysis involves \textit{non-targeted misconfiguration detection}, where \sysname{} uses its default context library to aim the LLM for detecting general misconfigurations without prior knowledge of specific issues. In this mode, no specific misconfiguration type is provided to the model; instead, \sysname{} exhaustively analyzes the entire configuration file to identify `GENERAL' errors. 
 This approach is particularly valuable for detecting overlooked misconfigurations in large, complex network environments where errors may not be immediately obvious or anticipated. By running \sysname{} in this mode, we assess its ability to detect subtle misconfigurations across the network without predefined expectations, ensuring it can operate effectively even when network operators are unsure of the specific issues they might face.
 
-We perform exhaustive analysis using \sysname{} across 11 full configuration files covering $\sim6\%$ of all devices on the campus network, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify the corresponding misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table~\ref{tab:real_results}, highlighting \sysname{}'s ability to uncover new misconfigurations. For each of misconfigurations detected by \sysname{}, we verify the correctness of the inference decision with domain experts. 
+We perform exhaustive analysis using \sysname{} across 11 configuration files covering $\sim6\%$ of all devices on the campus network, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify the corresponding misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table~\ref{tab:real_results}, highlighting \sysname{}'s ability to uncover new misconfigurations. For each of misconfigurations detected by \sysname{}, we verify the correctness of the inference decision with domain experts. 
 
 \paragraph{Targeted Analysis} 
 In the targeted analysis, \sysname{} demonstrates consistent performance
