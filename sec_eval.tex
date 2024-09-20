@@ -21,7 +21,8 @@ We opt not to use the GPU, as the computational cost of the context extraction a
 
 
 \subsubsection{LLM Model Used: GPT-4o} For running the LLM-based detection, we use GPT-4o~\cite{openai_gpt4o}, OpenAI's most recent transformer-based model designed for complex multi-step tasks.
-\textit{Specifications}---Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
+
+\mypara{Specifications} Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
 
 \subsubsection{Prompting and Query Setup}
 We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration lines to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (\eg, syntax issues, policy conflicts) or general misconfigurations. Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}

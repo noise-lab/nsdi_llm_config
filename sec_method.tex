@@ -8,7 +8,10 @@
     \label{fig:overview}
 \end{figure*}
 
-To address the limitations of partition-based prompting, we design
+
+To address the limitations of partition-based prompting,
+which often fails to capture dependencies across non-adjacent sections of configuration files,
+we design
 Context-Aware Iterative Prompting (\sysname{}), which has two components, as
 shown in Figure~\ref{fig:overview}: a context mining component and an
 iterative prompting component. These components work together to automate the
@@ -86,7 +89,7 @@ P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V
 
 \begin{figure}[t]
     \centering
-    \fbox{\includegraphics[width=0.85\columnwidth]{figs/context_mine.png}}
+    \fbox{\includegraphics[width=0.9\columnwidth]{figs/context_mine.png}}
     \caption{Example context mined on selected config line.}
     \label{fig:context_mine}
 \end{figure}
@@ -257,13 +260,23 @@ As we transition from context mining to utilizing the extracted information in L
 
 \subsubsection{Challenge 3 - Context Overload in Prompting}
 \label{challenge_3}
-A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
-Even with the precise context extraction mechanisms we have, the extracted context can sometimes be extensive. 
+A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information, causing it to lose focus on the most pertinent details.
+% This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
+Even with the precise context extraction mechanisms we have, the extracted context can sometimes be extensive,
 % When this large amount of context is provided to an LLM in a single prompt, the model can struggle to maintain focus, leading to several issues:
-Feeding this large amount of context to an LLM can lead to several issues:
+% Feeding this large amount of context to an LLM can lead to several issues:
+leading to several issues:
+
 \begin{enumerate}
     \item \textit{Dilution of Relevance}: The model might lose track of the most critical elements of the prompt, resulting in responses that are less accurate or less relevant. For instance, in a complex router configuration, key misconfiguration details could get buried in a flood of less relevant context.
-    \item \textit{Loss of Coherence and Accuracy}: The model might generate responses that are disjointed or fail to address the core misconfiguration, as it attempts to process all the given information at once. This can lead to fragmented reasoning or erroneous conclusions when handling intricate dependencies in router settings. Additionally, LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can also severely impact performance.
+    \item \textit{Loss of Coherence and Accuracy}:
+    % The model might generate responses that are disjointed or fail to address the core misconfiguration, as it attempts to process all the given information at once. This can lead to fragmented reasoning or erroneous conclusions when handling intricate dependencies in router settings. Additionally, LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can also severely impact performance.
+    The model might produce disjointed responses or fail to address core
+    misconfigurations when processing too much information at once. This
+    can lead to fragmented reasoning or errors, especially with intricate
+    router settings. Additionally, token limitations may cause the model
+    to truncate important sections or struggle to process excessive context, 
+    further impacting performance.
     % \item \textit{Decreased Performance}: Providing too much context can overwhelm the model’s processing capabilities, degrading the overall quality of the output. LLMs have inherent token limitations, and overloading the prompt with context can force the model to either truncate important sections or attempt to process more than it reasonably can, which can severely impact performance.
 \end{enumerate}
 
@@ -273,28 +286,36 @@ For example, in detecting routing policy misconfigurations, a single misconfigur
 \mypara{Solution}
 To address these issues, \sysname{} implements an iterative, sequential prompting framework that allows the model to request and process relevant context in stages. Instead of overwhelming the model with all available context at once, \sysname{} enables the model to actively request additional information as needed. This approach enhances the model’s ability to maintain focus, coherence, and overall detection accuracy by allowing it to prioritize and process context more effectively, ensuring that only the most pertinent information is presented at each step.
 
-\mysubpara{1. Initial Prompting:} The process begins by feeding the LLM the specific configuration line under review, along with targeted instructions about the type of misconfiguration we are checking for (\eg, syntax errors, dependency conflicts, or just general misconfiguration). This prompt is concise, providing only the critical line and the request as shown in the Figure~\ref{fig:initial_prompt}. This reduces the initial information load and allows the model to focus on the core issue.
+\mysubpara{1. Initial Prompting:} The process begins by feeding the LLM the specific configuration line under review, along with targeted instructions about the type of misconfiguration we are checking for (\eg, syntax errors, dependency conflicts, or just general misconfiguration).
+% This prompt is concise, providing only the critical line and the request as shown in the example in 
+Figure~\ref{fig:initial_prompt} presents an example where the initial prompt
+includes MTU configuration line with an instruction to identify any
+syntax misconfigurations related to that configuration.
+This reduces the initial information load and allows the model to focus on the core issue.
 
 
     \begin{figure}[tb]
     \centering
-    \fbox{\includegraphics[width=0.9\columnwidth]{figs/initial_prompt_response.png}}
+    \fbox{\includegraphics[width=\columnwidth]{figs/initial_prompt_response.png}}
     \caption{Example: initial prompting and LLM context request response for detecting syntax misconfiguration.}
     \label{fig:initial_prompt}
 \end{figure}
 
-\mysubpara{2. Contextual Options:} Next, \sysname{} offers the model the option to request additional context based on its understanding of the configuration line and the misconfiguration detection request. These options are based on our categorized context types, including: neighboring (\( N(P) \)), similar (\(S(P) \)) , and referenceable contexts (\( R(P) \)), as well as referenceable contexts on neighboring configurations (\( N(R(P)) \)). By allowing the model to choose which context to receive, \sysname{} ensures that the LLM is only given information that is most relevant to the detection task at hand, reducing the risk of context overload. An example request response is shown in Figure~\ref{fig:initial_prompt}.
+\mysubpara{2. Contextual Options:} Next, \sysname{} offers the model the option to request additional context based on its understanding of the configuration line and the misconfiguration detection request. These options are based on our categorized context types, including: neighboring (\( N(P) \)), similar (\(S(P) \)) , and referenceable contexts (\( R(P) \)), as well as referenceable contexts on neighboring configurations (\( N(R(P)) \)). By allowing the model to choose which context to receive, \sysname{} ensures that the LLM is only given information that is most relevant to the detection task at hand, reducing the risk of context overload. Figure~\ref{fig:initial_prompt} illustrates an example request response
+where the LLM requests neighboring context and referenceable contexts on neighboring configurations after the initial prompt to aid analyzing the MTU setting.
     
-\mysubpara{3. Iterative Refinement:} After the model processes the initial prompt, it can request additional information if needed before arriving at the final decision. \sysname{} engages in a feedback loop where the model’s output informs the next set of prompts. For instance, if the model identifies a possible syntax issue but requires more context from a related policy definition, \ie, similar context, \sysname{} can deliver that specific context in the next prompt. This iterative process continues until the model has sufficient information to make a well-informed decision. Figure~\ref{fig:feedback_and_response} provides an example of what a final misconfiguration decision looks like.
+\mysubpara{3. Iterative Refinement:} After the model processes the initial prompt, it can request additional information if needed before arriving at the final decision. \sysname{} engages in a feedback loop where the model’s output informs the next set of prompts. For instance, if the model identifies a possible syntax issue but requires more context from a related policy definition, \ie, similar context, \sysname{} can deliver that specific context in the next prompt. This iterative process continues until the model has sufficient information to make a well-informed decision. Figure~\ref{fig:feedback_and_response} provides an example of what a final misconfiguration decision looks like regarding a misconfiguared MTU value.
     \begin{figure}[tb]
     \centering
-    \fbox{\includegraphics[width=0.9\columnwidth]{figs/feedback_and_response.png}}
+    \fbox{\includegraphics[width=\columnwidth]{figs/feedback_and_response.png}}
     \caption{Example: Adding requested context and retrieving misconfiguration detection result.}
     \label{fig:feedback_and_response}
 \end{figure}
 
 
-This sequential, interactive approach mirrors how a network administrator might manually review a configuration file—examining the most relevant sections first, then digging deeper into referenceable or adjacent configurations as needed. It ensures that the model focuses on the most critical aspects of the configuration without becoming overwhelmed by extraneous information.
+This sequential, interactive approach mirrors how a network administrator might manually review a configuration file—examining the most relevant sections first, then digging deeper into referenceable or adjacent configurations as needed.
+
+% It ensures that the model focuses on the most critical aspects of the configuration without becoming overwhelmed by extraneous information.
 
 \subsubsection{Why Iterative, Requested Based Prompting Works}
 By breaking down the context into smaller, more digestible portions, \sysname{} addresses the fundamental challenges of context overload. This method significantly enhances the model’s ability to:

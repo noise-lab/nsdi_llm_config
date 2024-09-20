@@ -51,7 +51,7 @@ when analyzing a particular configuration line or excerpt,
 including related lines that might aid in detecting misconfigurations. 
 Doing so helps to refine the model's response by incorporating network-specific context unique to the current configuration, rather than relying solely on pre-learned knowledge. Without this targeted context, the LLM's ability to identify potential issues is significantly diminished ~\cite{liskavets2024prompt,tian2024examining,khurana2024and, shvartzshnaider2024llm}.
 
-A na\"{i}ve approach to incorporating context would be to feed the entire
+\mypara{Limitations of Full-File Prompting} A na\"{i}ve approach to incorporating context would be to feed the entire
 configuration file to the LLM, either all at once in a single prompt or
 progressively, and let the model handle the detection. This method, while
 straightforward, is highly inefficient due to the inherent token length
@@ -67,7 +67,7 @@ due to irrelevant context.
 % unrelated sections, making it impractical to handle all lines equally
 % without careful context management.
 
-A common solution to context overload has been partition-based prompting,
+\mypara{Challenges of Partition-Based Prompting} A common solution to context overload has been partition-based prompting,
 where the large and complex configuration file is broken down into smaller
 chunks or sections, typically based on the order in which the configuration
 appears in the file. These chunks are then individually fed to the LLM for
