@@ -169,7 +169,7 @@ P' = \{ V_1 \rightarrow \text{Interfaces} \rightarrow \text{Ethernet1} \rightarr
 In this case, \( P' \) shares the same broad configuration category `Interfaces' (\( V_2(P') = V_2(P) \)) and parameter node `MTU' (\( V_k(P') = V_k(P) \)), but differs in the intermediate node `Ethernet1' and the parameter value (9000 vs. 1500). By comparing similar configurations, the context reveals not only the MTU settings but also the intermediate configuration elements leading to the MTU setting across different interfaces within the network configuration.
 
 
-\paragraph{Referenceable Configuration Mining:} In the hierarchical tree structure, referenceable configurations are identified by locating paths where the parameter node of the current line under review appears as an intermediate node in other paths. This context is crucial for understanding how specific parameter values or policies are further referenced, elaborated upon, or applied in other parts of the configuration. we can formalize this set of referenceable configuration paths as:
+\paragraph{Referenceable Configuration Mining:} In the hierarchical tree structure, referenceable configurations are identified by locating paths where the parameter value of the current line under review appears as an intermediate node in other paths. This context is crucial for understanding how specific parameter values or policies are further referenced, elaborated upon, or applied in other parts of the configuration. we can formalize this set of referenceable configuration paths as:
 \[
 R(P) = \{ P' : P' =  V_1 \rightarrow \dots \rightarrow v_k(P) \rightarrow \dots \rightarrow V_k(P') \} = v_k(P').
 \]
@@ -296,7 +296,7 @@ This reduces the initial information load and allows the model to focus on the c
 
     \begin{figure}[tb]
     \centering
-    \fbox{\includegraphics[width=\columnwidth]{figs/initial_prompt_response.png}}
+    \fbox{\includegraphics[width=0.95\columnwidth]{figs/initial_prompt_response.png}}
     \caption{Example: initial prompting and LLM context request response for detecting syntax misconfiguration.}
     \label{fig:initial_prompt}
 \end{figure}
@@ -307,7 +307,7 @@ where the LLM requests neighboring context and referenceable contexts on neighbo
 \mysubpara{3. Iterative Refinement:} After the model processes the initial prompt, it can request additional information if needed before arriving at the final decision. \sysname{} engages in a feedback loop where the model’s output informs the next set of prompts. For instance, if the model identifies a possible syntax issue but requires more context from a related policy definition, \ie, similar context, \sysname{} can deliver that specific context in the next prompt. This iterative process continues until the model has sufficient information to make a well-informed decision. Figure~\ref{fig:feedback_and_response} provides an example of what a final misconfiguration decision looks like regarding a misconfiguared MTU value.
     \begin{figure}[tb]
     \centering
-    \fbox{\includegraphics[width=\columnwidth]{figs/feedback_and_response.png}}
+    \fbox{\includegraphics[width=0.95\columnwidth]{figs/feedback_and_response.png}}
     \caption{Example: Adding requested context and retrieving misconfiguration detection result.}
     \label{fig:feedback_and_response}
 \end{figure}

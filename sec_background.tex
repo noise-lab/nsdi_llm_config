@@ -12,7 +12,7 @@ In contrast to model checkers, consistency checkers such as \textit{Diffy}~\cite
 For instance, Diffy learns configuration templates and identifies anomalies by
 comparing new configurations to learned patterns, while Minerals applies
 association rule mining to detect misconfigurations by learning local policies
-from router configuration files. Unfortauntely, these approaches tend to oversimplify configurations by treating deviations from standard patterns as misconfigurations, leading to false positives when valid configurations deviate for context-specific reasons.
+from router configuration files. Unfortunately, these approaches tend to oversimplify configurations by treating deviations from standard patterns as misconfigurations, leading to false positives when valid configurations deviate for context-specific reasons.
 
 In light of the shortcomings of these existing tools,
 researchers have looked to Large Language Models (LLMs) for misconfiguration detection~\cite{bogdanov2024leveraging,chen2024automatic,wang2024identifying,liu2024large, wang2024netconfeval} due to their advanced ability to understand and process complex contextual information embedded within network configurations. In a Q\&A format, prompts containing
