@@ -53,6 +53,9 @@ is required to accurately model networks' routing and forwarding behaviors.
 Similarly, context concerning packet and route filter semantics is required to
 accurately detect inconsistencies in filter
 configurations~\cite{kakarla2020finding}.
+%As another example, forwarding policies are rarely recorded and only certain
+%types of policies can be reverse-engineered from
+%configurations~\cite{birkner2020config2spec, kheradmand2020anime}. 
 
 Because LLMs are typically trained on vast volumes of data---which likely
 includes protocol standards, vendor documentation, and sample
@@ -74,6 +77,11 @@ prompts~\cite{lian2023configuration,chen2024automatic,wang2024identifying}
 may cause the LLM to ignore dependencies between configuration lines,
 resulting in failures to detect certain misconfigurations.
 
+% In this paper, we introduce a new framework, Context-Aware Iterative Prompting
+% (\sysname{}), to automate context extraction and optimize prompting to LLMs
+% for accurate router misconfiguration detection. We identify three key
+% challenges in realizing this framework and provide solutions for them:
+
 In this paper, we address the problem of precisely extracting and integrating network-specific context into LLM prompts to enhance the accuracy of router misconfiguration detection. We introduce the
 Context-Aware Iterative Prompting (\sysname{}) framework, which
 solves three key challenges in this process:
@@ -87,6 +95,10 @@ avoid introducing irrelevant information in prompts that could impair the accura
 misconfiguration detection. \textbf{Solution}: We address this challenge by
 leveraging the hierarchical structure of configuration files, modeling them as
 trees, where each line is a unique path from the root to a parameter value.
+% This representation allows us to systematically mine three types of
+% context---neighboring, similar, and referenced configuration
+% statements---ensuring the LLM receives the most relevant information for
+% accurate analysis.
 This representation allows us to systematically mine and adhere to three core types of
 context---neighboring, similar, and referenced configuration
 statements---ensuring the LLM receives the most relevant information for
@@ -108,7 +120,9 @@ different contexts.
 \mypara{Challenge 3 - Managing Context Overload in Prompts}
 Even with precise context extraction, the volume of relevant information can
 be large to fit in a single prompt. 
+%, risking prompt overload when fed into LLMs. Excessive context 
 Feeding excess context into LLMs can dilute relevance, reduce coherence, and degrade the model’s performance.
+%, necessitating strategies to manage and streamline the input effectively. 
 \textbf{Solution}: Our framework mitigates the potential for context overload
 by allowing the LLM to iteratively request specific types of context, refining
 the prompt based on the model’s feedback. This approach enhances the model’s
@@ -116,7 +130,11 @@ ability to focus on the most relevant information, leading to more precise
 misconfiguration detection and reducing the likelihood for context overload.
 
 We evaluate our framework through two distinct case studies.
+%: (1) synthetic change verification: 
+% First, using configuration snapshots from real networks, we introduce {\em synthetic} modifications to simulate potential changes that network operators may make (both correct and incorrect). 
 First, using configuration snapshots from real networks, we introduce {\em synthetic} misconfigurations that mirror potential operator errors. 
 We demonstrate that \sysname{} accurately infers and detects these misconfigurations, with at least 30\% more
 accuracy than conventional partition-based LLM approach, model checkers, and consistency checkers.
+%(2) comprehensive real configuration snapshot verification: 
+% Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network, and 
 Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network, and \sysname{} is able to detect over 20 cases of previous overlooked misconfigurations.

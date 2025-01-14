@@ -187,13 +187,26 @@
 %\title{CAIP: Context Aware Iterative Prompting for LLM-Powered Router Misconfiguration Detection
 
 \title{CAIP: Detecting Router Misconfigurations with Context-Aware Iterative Prompting of LLMs}
-\author{Paper \#722, \pageref{endOfBody} pages body, \pageref{LastPage} pages total}
-% \renewcommand{\shortauthors}{X. Jiang, et al}
+%\author{Paper \#722, \pageref{endOfBody} pages body, \pageref{LastPage} pages total}
 \newcommand{\eg}{{\it e.g.}}
 \newcommand{\ie}{{\it i.e.}}
 \newcommand{\etal}{{\it et al.}}
 \newcommand{\sysname}{{CAIP}}
 \input{macros}
+
+%for single author (just remove % characters)
+\author{
+	{\rm Xi Jiang}\\
+	University of Chicago
+	\and
+	{\rm Aaron Gember-Jacobson}\\
+	Colgate University 
+	% copy the following lines to add more authors
+	 \and
+	 {\rm Nick Feamster}\\
+	University of Chicago
+} % end author
+
 \maketitle
 
 \input{sec_abstract}
@@ -201,7 +214,7 @@
 
 %-------------------------------------------------------------------------------
 \begin{sloppypar}
-\input{sec_intro_context_new}
+\input{sec_intro_context}
 \input{sec_background}
 \input{sec_method}
 \input{sec_eval}
