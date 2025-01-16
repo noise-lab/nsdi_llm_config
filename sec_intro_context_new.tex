@@ -21,28 +21,30 @@ misconfigurations in routing devices. On one hand, \textbf{model
 	ritchey2000using,al2011configchecker, jeffrey2009model} rely on manually
 defined \emph{semantics}, which we define here as \emph{the set of correctness
 	constraints, protocol-specific rules, and policy-specific requirements that
-	configurations must satisfy}. These semantics are encoded in policies or rules
-checked against the router's configuration. The advantage of model checkers
-lies in their ability to encode deeper, context-specific knowledge: indeed,
+	configurations must satisfy}. \aaron{What is the difference between "correctness constraints" and "policy-specific requirements"?} These semantics are encoded in policies or rules
+checked against the router's configuration. \aaron{The preceding sentence doesn't quite make sense. Policies are checked against configurations, but both policies and configurations have semantics. Configuration semantics are defined by vendors and routing protocol standards; policy semantics are defined by the model checker. Both configuration and policy semantics are encoded in the model (e.g., as SMT constraints).} The advantage of model checkers
+lies in their ability to encode deeper, \aaron{Deeper than what?} context-specific knowledge: indeed,
 for different configuration types, software versions, or vendor-specific
 features, one can tailor the rules to accurately capture correctness. The key
 limitation, however, is the lack of automation. The reliability of these
 policy-based tools depends heavily on the correctness and completeness of the
-manually inferred semantics. Moreover, for evolving device types, a variety of
+manually inferred \aaron{encoded? (inferred seems to imply automation)} semantics. Moreover, for evolving device types, a variety of
 configuration versions, or large sets of heterogeneous setups, the labor
 required to add, remove, or modify entire sets of policy rules quickly becomes
-prohibitive.
+prohibitive. \aaron{Cite \cite{ye2020hoyan, birkner2021metha} and perhaps other works.}
 
 On the other hand, \textbf{consistency
 	checkers}~\cite{kakarla2024diffy,kakarla2020finding, le2006minerals,
 	feamster2005detecting, tang2021campion, le2008detecting, le2006characterization}
 compare one device’s configuration with those of peer devices, different
-snapshots of the same device, or best-practice baselines to flag
+snapshots of the same device, \aaron{comparing configuations across time sounds like a great idea, but do any existing tools actually do this?} or best-practice baselines to flag
 inconsistencies. This approach lends itself to automation because statistical
 or pattern-based checks require minimal human intervention in crafting
 explicit policies. However, consistency alone does not necessarily imply
 correctness. A device’s configuration may align perfectly with peer devices or
 earlier snapshots yet still harbor protocol-level or internal conflicts.
+
+\aaron{We had also discussed a third category: {\bf sanity checkers}, such as Batfish and router CLIs, which check for values that are out of range or references to undefined filters, VLANs, etc.}
 
 \smallskip
 \noindent
@@ -52,7 +54,7 @@ earlier snapshots yet still harbor protocol-level or internal conflicts.
 	semantic understanding of model checkers (given sufficient and relevant
 	context) with the automated flexibility of consistency checkers? In doing so,
 	can we minimize the burdensome process of manually crafting policies?}
-
+\aaron{Existing works on inferring network policies from configurations~\cite{kheradmand2020anime, birkner2020config2spec} and extracting semantics from protocol standards~\cite{sharma2023prosper, yen2021sage} or implementations are attempts to automate model checking.}
 \smallskip
 
 As a promising step toward addressing this question, researchers are beginning
@@ -64,7 +66,9 @@ configuration lines into pre-trained transformer models, allowing these LLMs
 to detect syntax issues and some category of semantic errors. When provided
 with appropriate sections of configuration (\eg, parameters relevant to an ACL
 block), an LLM can often derive correct semantic constraints from its
-pre-trained corpus and identify subtle errors.
+pre-trained corpus \aaron{Is LLM actually deriving semantic constraints?} and identify subtle errors.
+
+\aaron{Sudden jump to talking about context; seems disconnected from first half of introduction which emphasizes semantics and automation. Can we create a stronger linkage between semantics and context?}
 
 All of these techniques—model checkers, consistency checkers, and LLM-based
 Q\&A tools—rely on the notion of \emph{context}. Model checkers require
@@ -79,7 +83,7 @@ incorrect lines may spawn false alarms.
 Assembling high-quality context, however, can be a substantial burden.
 Providing detailed protocol semantics, capturing vendor- or version-specific
 syntax, and enumerating idiosyncratic device features is both time-consuming
-and error-prone, even in a single-router scenario. Fortunately, LLMs hold
+and error-prone, even in a single-router scenario~\cite{benson2009complexitymetrics, ye2020hoyan, birkner2021metha}. Fortunately, LLMs hold
 significant promise here because they are typically pre-trained on vast
 corpora of network-related texts, including protocol specifications, vendor
 documentation, and publicly available configurations. This \emph{generic
@@ -96,7 +100,7 @@ configuration, hindering its ability to detect correlated errors.
 
 In this paper, we address the problem of precisely extracting and integrating
 network-specific context for a given routing device into LLM prompts to enhance
-the detection of router misconfigurations. Specifically, we introduce the
+the detection of router misconfigurations. \aaron{The contribution of this paper seems disconnected from the research question listed earlier in the introduction.} Specifically, we introduce the
 \emph{Context-Aware Iterative Prompting} (\sysname{}) framework, which tackles
 three key challenges:
 
@@ -113,7 +117,7 @@ context---\emph{neighboring}, \emph{similar}, and \emph{referenced}
 configuration lines—ensuring the LLM receives a concise yet sufficient corpus
 for accurate analysis.
 
-\mypara{Challenge 2: Parameter-Value Ambiguity in Referenceable Context}
+\mypara{Challenge 2: Parameter-Value Ambiguity in Referenceable Context} \aaron{This should be grouped under challenge 1, and not be a separate high-level challenge.}
 Configurations contain both pre-defined and user-defined parameters, and the
 latter often require specialized context to interpret correctly. For example,
 an interface might reference a user-defined ACL whose definition resides
@@ -139,7 +143,7 @@ real-world device configuration snapshots, inject a series of realistic
 updates (including both correct modifications and latent misconfigurations),
 and show that \sysname{} outperforms existing partition-based LLM approaches,
 model checkers, and consistency checkers by at least 30\% in accurate error
-detection. Second, we run \sysname{} exhaustively on configuration snapshots
+detection. \aaron{Saying we are 30\% more accurate in error detection that model checkers seems like an over claim, especially since we haven't shown we can detect the same errors as model checkers.} Second, we run \sysname{} exhaustively on configuration snapshots
 from a medium-sized campus network. \sysname{} identifies more than 20
 previously overlooked misconfigurations, further underscoring its practical
 utility.
