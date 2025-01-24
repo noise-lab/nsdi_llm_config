@@ -3,48 +3,49 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
 The style file: plain.bst
 Database file #1: citations.bib
+Warning--to sort, need author or key in manrs
 Warning--empty journal in le2006characterization
 Warning--empty journal in lican
 Warning--empty year in lican
-You've used 57 entries,
+You've used 65 entries,
             2118 wiz_defined-function locations,
-            778 strings with 15903 characters,
-and the built_in function-call counts, 23865 in all, are:
-= -- 2202
-> -- 1593
+            808 strings with 17816 characters,
+and the built_in function-call counts, 26636 in all, are:
+= -- 2424
+> -- 1803
 < -- 19
-+ -- 630
-- -- 570
-* -- 1743
-:= -- 3984
-add.period$ -- 178
-call.type$ -- 57
-change.case$ -- 449
++ -- 714
+- -- 646
+* -- 1938
+:= -- 4456
+add.period$ -- 201
+call.type$ -- 65
+change.case$ -- 511
 chr.to.int$ -- 0
-cite$ -- 60
-duplicate$ -- 850
-empty$ -- 1583
-format.name$ -- 570
-if$ -- 4919
+cite$ -- 69
+duplicate$ -- 948
+empty$ -- 1796
+format.name$ -- 646
+if$ -- 5482
 int.to.chr$ -- 0
-int.to.str$ -- 57
-missing$ -- 55
-newline$ -- 288
-num.names$ -- 116
-pop$ -- 534
+int.to.str$ -- 65
+missing$ -- 61
+newline$ -- 327
+num.names$ -- 130
+pop$ -- 629
 preamble$ -- 1
-purify$ -- 393
+purify$ -- 447
 quote$ -- 0
-skip$ -- 633
+skip$ -- 691
 stack$ -- 0
-substring$ -- 1032
-swap$ -- 248
+substring$ -- 1072
+swap$ -- 262
 text.length$ -- 19
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 228
-warning$ -- 3
-while$ -- 186
-width$ -- 59
-write$ -- 606
-(There were 3 warnings)
+type$ -- 260
+warning$ -- 4
+while$ -- 200
+width$ -- 67
+write$ -- 683
+(There were 4 warnings)

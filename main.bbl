@@ -1,5 +1,16 @@
 \begin{thebibliography}{10}
 
+\bibitem{manrs}
+Mutually agreed norms for routing security ({MANRS}).
+\newblock \url{https://manrs.org}.
+
+\bibitem{abhashkumar2020aed}
+Anubhavnidhi Abhashkumar, Aaron Gember-Jacobson, and Aditya Akella.
+\newblock Aed: incrementally synthesizing policy-compliant and manageable
+  configurations.
+\newblock In {\em Proceedings of the 16th International Conference on Emerging
+  Networking EXperiments and Technologies ({CoNEXT})}, 2020.
+
 \bibitem{abhashkumar2020tiramisu}
 Anubhavnidhi Abhashkumar, Aaron Gember-Jacobson, and Aditya Akella.
 \newblock Tiramisu: Fast multilayer network verification.
@@ -38,6 +49,14 @@ Rudiger Birkner, Tobias Brodmann, Petar Tsankov, Laurent Vanbever, and Martin
 \newblock Metha: Network verifiers need to be correct too!
 \newblock In {\em 18th USENIX Symposium on Networked Systems Design and
   Implementation (NSDI)}, 2021.
+
+\bibitem{birkner2020config2spec}
+R{\"{u}}diger Birkner, Dana Drachsler{-}Cohen, Laurent Vanbever, and Martin~T.
+  Vechev.
+\newblock Config2spec: Mining network specifications from network
+  configurations.
+\newblock In {\em {USENIX} Symposium on Networked Systems Design and
+  Implementation ({NSDI})}, 2020.
 
 \bibitem{bogdanov2024leveraging}
 Mark Bogdanov.
@@ -127,6 +146,12 @@ Siva Kesava~Reddy Kakarla, Francis~Y Yan, and Ryan Beckett.
 \newblock {\em Proceedings of the ACM on Programming Languages},
   8(PLDI):199--222, 2024.
 
+\bibitem{kheradmand2020anime}
+Ali Kheradmand.
+\newblock Automatic inference of high-level network intents by mining
+  forwarding patterns.
+\newblock In {\em Symposium on {SDN} Research ({SOSR})}, 2020.
+
 \bibitem{khurana2024and}
 Anjali Khurana, Hariharan Subramonyam, and Parmit~K Chilana.
 \newblock Why and when llm-based assistants can go wrong: Investigating the
@@ -197,6 +222,14 @@ Chang Liu, Xiaohui Xie, Xinggong Zhang, and Yong Cui.
   challenges.
 \newblock {\em arXiv preprint arXiv:2404.12901}, 2024.
 
+\bibitem{mahimkar2022aurora}
+Ajay Mahimkar, Zihui Ge, Xuan Liu, Yusef Shaqalle, Yu~Xiang, Jennifer Yates,
+  Shomik Pathak, and Rick Reichel.
+\newblock Aurora: conformity-based configuration recommendation to improve
+  {LTE/5G} service.
+\newblock In {\em Proceedings of the 22nd ACM Internet Measurement Conference
+  ({IMC})}, 2022.
+
 \bibitem{neil2020transformers}
 Houlsby Neil and Weissenborn Dirk.
 \newblock Transformers for image recognition at scale.
@@ -235,6 +268,21 @@ Xipeng Qiu, Tianxiang Sun, Yige Xu, Yunfan Shao, Ning Dai, and Xuanjing Huang.
 \newblock Pre-trained models for natural language processing: A survey.
 \newblock {\em Science China technological sciences}, 63(10):1872--1897, 2020.
 
+\bibitem{ramanathan2023aura}
+Sivaramakrishnan Ramanathan, Ying Zhang, Mohab Gawish, Yogesh Mundada, Zhaodong
+  Wang, Sangki Yun, Eric Lippert, Walid Taha, Minlan Yu, and Jelena Mirkovic.
+\newblock Practical intent-driven routing configuration synthesis.
+\newblock In {\em 20th USENIX Symposium on Networked Systems Design and
+  Implementation ({NSDI})}, 2023.
+
+\bibitem{rasche2023esnet}
+Amber Rasche.
+\newblock 5 questions for {Scott Richmond} and {Jon-Paul Herron} on embracing
+  network automation at {ESnet}.
+\newblock
+  \url{https://internet2.edu/5-questions-embracing-network-automation-at-esnet/},
+  August 2023.
+
 \bibitem{ritchey2000using}
 Ronald~W Ritchey and Paul Ammann.
 \newblock Using model checking to analyze network vulnerabilities.
@@ -245,6 +293,13 @@ Ronald~W Ritchey and Paul Ammann.
 Murray Shanahan.
 \newblock Talking about large language models.
 \newblock {\em Communications of the ACM}, 67(2):68--79, 2024.
+
+\bibitem{sharma2023prosper}
+Prakhar Sharma and Vinod Yegneswaran.
+\newblock Prosper: Extracting protocol specifications using large language
+  models.
+\newblock In {\em Proceedings of the 22nd ACM Workshop on Hot Topics in
+  Networks ({HotNets})}, 2023.
 
 \bibitem{sheng2019nrtr}
 Fenfen Sheng, Zhineng Chen, and Bo~Xu.
@@ -284,6 +339,15 @@ Ross Taylor, Marcin Kardas, Guillem Cucurull, Thomas Scialom, Anthony
 \newblock Galactica: A large language model for science. arxiv 2022.
 \newblock {\em arXiv preprint arXiv:2211.09085}, 10, 2023.
 
+\bibitem{tian2019jinjing}
+Bingchuan Tian, Xinyi Zhang, Ennan Zhai, Hongqiang~Harry Liu, Qiaobo Ye,
+  Chunsheng Wang, Xin Wu, Zhiming Ji, Yihong Sang, Ming Zhang, Da~Yu, Chen
+  Tian, Haitao Zheng, and Ben~Y. Zhao.
+\newblock Safely and automatically updating in-network {ACL} configurations
+  with intent language.
+\newblock In {\em Proceedings of the {ACM} Special Interest Group on Data
+  Communication ({SIGCOMM})}, 2019.
+
 \bibitem{tian2024examining}
 Xiaoyi Tian, Amogh Mannekote, Carly~E Solomon, Yukyeong Song, Christine~Fry
   Wise, Tom Mcklin, Joanne Barrett, Kristy~Elizabeth Boyer, and Maya Israel.
@@ -315,12 +379,6 @@ Zehao Wang, Dong~Jae Kim, and Tse-Hsun Chen.
 \newblock Identifying performance-sensitive configurations in software systems
   through code analysis with llm agents.
 \newblock {\em arXiv preprint arXiv:2406.12806}, 2024.
-
-\bibitem{xu2023netcov}
-Xieyang Xu, Weixin Deng, Ryan Beckett, Ratul Mahajan, and David Walker.
-\newblock Test coverage for network configurations.
-\newblock In {\em 20th {USENIX} Symposium on Networked Systems Design and
-  Implementation ({NSDI})}, 2023.
 
 \bibitem{xue2024repeat}
 Fuzhao Xue, Yao Fu, Wangchunshu Zhou, Zangwei Zheng, and Yang You.
