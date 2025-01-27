@@ -1,0 +1,204 @@
+\section{Background and Motivation}
+\label{sec_background}
+
+\aaron{The paragraphs below (leading up to Section 2.1) repeat much of the first half of the introduction. I propose we eliminate the details about model checkers and consistency checkers, and include details as appropriate in Section 2.1, where we compare LLMs with these prior tools. Furthermore, I propose we trim and combine the first and fourth paragraphs below to provide a concise lead-in to Section 2 that builds on what was already said in the introduction.}
+
+Routing device misconfigurations are a common and persistent issue, often leading to
+security vulnerabilities, performance degradation, or even network outages
+\cite{zheng2012atpg, feamster2005detecting}. Addressing these misconfigurations
+manually is akin to having a domain expert, such as a network engineer,
+painstakingly analyze every configuration line. While an expert leverages years
+of experience and an in-depth understanding of standard practices, the complexity
+and interdependency of modern configurations \cite{le2007rr, benson2009complexitymetrics}
+make this process not only labor-intensive but also prone to error—especially at scale.
+
+To reduce this reliance on manual effort, automated tools such as model checkers
+and consistency checkers have emerged. Model checkers
+\cite{fogel2015general, beckett2017general, abhashkumar2020tiramisu, prabhu2020plankton,
+	zhang2022sre, steffen2020netdice, ye2020hoyan, ritchey2000using, al2011configchecker,
+	jeffrey2009model} identify misconfigurations by creating a logical model of the
+control and data planes, then analyzing or simulating whether engineer-specified
+forwarding policies are satisfied. For example, Batfish simulates the control and data
+planes under specific network conditions (\eg, link failures) and checks whether
+forwarding paths deviate from specified policies \cite{fogel2015general}.
+Similarly, Minesweeper uses a satisfiability solver to verify whether reachability
+and load-balancing policies hold under various scenarios (\eg, all single link
+failures) \cite{beckett2017general}. Although model checkers are popular, their
+efficacy depends heavily on the correctness and completeness of the predefined
+policies, which in turn require significant domain expertise to design. Moreover,
+they often struggle with the nuances of particular protocols and vendor-specific
+features \cite{ye2020hoyan, birkner2021metha}.
+
+In contrast, consistency checkers such as \textit{Diffy} \cite{kakarla2024diffy}
+and \textit{Minerals} \cite{le2006minerals} use statistical methods to learn
+typical configuration patterns, identifying deviations as potential errors rather
+than relying on predefined policies. For instance, Diffy learns configuration
+templates to spot anomalies in new configurations, while Minerals applies
+association rule mining to detect misconfigurations by deriving local policies
+from router files. Unfortunately, these approaches often oversimplify configurations
+by treating any deviation from standard patterns as misconfigurations—leading
+to false positives whenever valid, network-specific or device-specific choices
+differ from general norms.
+
+Given the limitations of existing tools, an ideal solution for misconfiguration
+detection would employ an automated, intelligent \emph{agent} with expert-level
+knowledge of routing device configurations. Such an agent could examine configuration
+lines in detail and apply domain expertise to detect potential issues. Recent
+advances in Large Language Models
+(LLMs)~\cite{bogdanov2024leveraging,chen2024automatic,wang2024identifying,liu2024large,
+	wang2024netconfeval} provide a promising avenue toward this goal. Pre-trained on
+large volumes of network-related data, these models embed a deep understanding of
+best practices and standards, enabling them to analyze intricate configurations
+effectively. At the same time, LLMs' successful applications across diverse
+domains~\cite{carion2020end,sheng2019nrtr,neil2020transformers,parmar2018image,
+	chen2021developing,gulati2020conformer} make their use in network misconfiguration
+detection a logical next step. A notable example is
+Ciri~\cite{lian2023configuration}, an LLM-based configuration verifier that
+illustrates the potential for scalable and accurate automated detection.
+
+%\subsection{How LLMs Encode and Apply Domain Knowledge}
+%
+%LLMs, particularly transformer-based generative pre-trained models
+%(PTMs)~\cite{vaswani2017attention,hill2024transformers,lin2022survey}, encode
+%domain knowledge during their pretraining phase, where they consume extensive
+%datasets containing network documentation, configuration files, and protocol
+%specifications~\cite{qiu2020pre,achiam2023gpt,touvron2023llama,shanahan2024talking,
+%	taylor2023galactica,brown2020language,chowdhery2023palm}. By predicting tokens in these
+%documents, they learn statistical patterns, syntactic conventions, and semantic
+%relationships fundamental to network operations, such as routing, access control
+%lists (ACLs), and firewall configurations. Over many training iterations, the
+%model’s parameters—comprising weight matrices and biases in embedding,
+%self-attention, and feed-forward layers—are refined via gradient descent to minimize
+%a loss function (often cross-entropy) between the model’s predictions and the true
+%tokens. This process embeds domain knowledge within the parameter space. For
+%example, if a particular firewall rule format consistently appears with a
+%\texttt{deny} directive, the model’s parameters will capture this relationship,
+%reinforcing a probabilistic link that is later applied to interpret and assess
+%new configuration lines.
+%
+%Throughout pretraining, multi-head self-attention mechanisms assign differing levels
+%of importance to contextually critical tokens, such as IP addresses or routing
+%keywords. Meanwhile, positional encodings preserve command sequence information,
+%allowing the model to learn hierarchical relationships like the order in which ACL
+%lines should be evaluated. Collectively, these features form an extensive “internal
+%library” of best practices for network configurations. Consequently, the learned
+%parameters encode both surface-level syntax (\eg, ACL formats) and higher-level
+%semantics (\eg, interplay between firewall rules and routing policies).
+%
+%When users provide instructions and configuration snippets (\eg, “Evaluate this
+%routing policy for possible conflicts”) in the form of \textit{prompts}, the model processes these prompt inputs through
+%its pretrained layers. The attention mechanism identifies tokens or phrases
+%relevant to learned patterns—such as a critical IP range or firewall directive.
+%Probabilistically, the model estimates
+%\[
+%p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1}),
+%\]
+%comparing each token’s likelihood to those typical distributions learned in pretraining.
+%Significant deviations may signal anomalies or misconfigurations, such as overlapping
+%IP ranges or misplaced \texttt{deny} statements. Thus, the model highlights
+%configuration snippets that deviate from high-probability (standard or valid)
+%patterns.
+%
+%Crucially, the self-attention structure allows cross-referencing of widely separated
+%parts of the configuration file. A rule in one section may conflict with parameters
+%defined in another, and the model detects such conflicts by aggregating context from
+%multiple segments. Positional encodings ensure that command order is preserved,
+%enabling the model to account for hierarchical precedence and other ordering
+%constraints. In Q\&A-style interactions, the model offers targeted insights about
+%potential conflicts and misconfigurations.
+
+%
+%\subsection{How LLMs Encode and Apply Domain Knowledge}
+%
+%LLMs, particularly transformer-based generative pre-trained models~\cite{vaswani2017attention,hill2024transformers,lin2022survey}, encode domain knowledge during pretraining by processing extensive datasets of network documentation, configuration files, and protocol specifications~\cite{qiu2020pre,achiam2023gpt,touvron2023llama,brown2020language}. Through this process, the models learn statistical patterns, structural hierarchies, and semantic relationships crucial to network operations. For example, they identify how ACL rules typically interact with routing policies or how specific firewall configurations align with best practices. This knowledge is embedded within the model’s parameters, which are refined using gradient descent to minimize prediction errors, effectively transforming the model into a probabilistic repository of domain-specific expertise.
+%
+%Technically, transformers achieve this by employing multi-head self-attention mechanisms, which dynamically assign importance to critical tokens such as protocol keywords or IP ranges, and positional encodings, which preserve the sequence of commands. These mechanisms allow the model to capture both surface-level syntax (\eg, ACL formats) and deeper semantic relationships (\eg, precedence of routing policies over firewall rules). The resulting parameterized knowledge acts like a domain expert’s internalized understanding, enabling the model to generalize its expertise to new configurations it encounters.
+%
+%When a user provides configuration snippets and instructions in a prompt (\eg, “Evaluate this ACL for conflicts”), the LLM combines its pre-trained knowledge with the contextual information in the prompt. The self-attention mechanism enables the model to cross-reference tokens in the prompt with its stored knowledge, such as identifying a conflict between a firewall rule and routing policy based on probabilistic relationships learned during pretraining. By estimating the likelihood of each token or sequence (\(p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1})\)), the model highlights deviations from high-probability patterns, flagging potential misconfigurations such as overlapping IP ranges or misplaced \texttt{deny} directives. This integration mirrors how a human domain expert draws on years of experience to evaluate new configurations, applying abstract principles to specific cases.
+%
+
+
+\subsection{How LLMs Encode and Apply Domain Knowledge}
+
+LLMs, particularly transformer-based generative pre-trained models~\cite{vaswani2017attention,hill2024transformers,lin2022survey}, encode domain knowledge during pretraining by processing extensive datasets of network documentation, configuration files, and protocol specifications~\cite{qiu2020pre,achiam2023gpt,touvron2023llama,brown2020language}. Through this process, the models learn statistical patterns, structural hierarchies, and semantic relationships crucial to network operations. For example, they identify how ACL rules typically interact with routing policies or how specific firewall configurations align with best practices. This knowledge is embedded within the model’s parameters, which are refined using gradient descent to minimize prediction errors, effectively transforming the model into a probabilistic repository of domain-specific expertise.
+Technically, transformers achieve this by employing multi-head self-attention mechanisms, which dynamically assign importance to critical tokens such as protocol keywords or IP ranges, and positional encodings, which preserve the sequence of commands. These mechanisms allow the model to capture both surface-level syntax (\eg, ACL formats) and deeper semantic relationships (\eg, precedence of routing policies over firewall rules). The resulting parameterized knowledge acts like a domain expert’s internalized understanding, enabling the model to generalize its expertise to new configurations it encounters.
+
+This unique architecture allows transformer-based LLMs to fundamentally surpass consistency checkers by integrating pre-trained domain knowledge with context-specific information from the configuration being analyzed, creating a much richer decision-making framework. Consistency checkers rely solely on statistical patterns derived from historical or similar data, using majority-voting logic to flag deviations as anomalies. This approach assumes that frequently observed patterns are always correct and treats all deviations as errors, regardless of whether they represent valid, context-specific configurations. As a result, consistency checkers fail to account for the underlying intent of the configuration or the broader network context, often leading to false positives and missed opportunities to understand nuanced misconfigurations.
+In contrast, LLMs integrate their pre-learned understanding of best practices with the specific configuration context provided in the prompt. By treating configurations as interconnected systems, they can assess whether deviations align with learned standards or represent genuine misconfigurations. For instance, while a consistency checker might flag a rare ACL rule as an anomaly, an LLM can reason that it is valid based on its relationships to routing policies or protocol directives elsewhere in the configuration.
+
+\aaron{The above comparison between consistency checkers and LLMs is fantastic! It would be great if we could make a similar comparison between model checkers and LLMs, highlighting both the advantages of LLMs (e.g., LLMs are fully automated whereas model checkers require manual specification of algorithms and policies) and the disadvantages (e.g., LLMs can reason about route computations but not actually computes).}
+
+When a user provides configuration snippets and instructions in a prompt (\eg, “Evaluate this ACL for conflicts”), the LLM combines its pre-trained knowledge with the contextual information in the prompt. The self-attention mechanism enables the model to cross-reference tokens in the prompt with its stored knowledge, such as identifying a conflict between a firewall rule and routing policy based on probabilistic relationships learned during pretraining. By estimating the likelihood of each token or sequence (\(p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1})\)), the model highlights deviations from high-probability patterns, flagging potential misconfigurations such as overlapping IP ranges or misplaced \texttt{deny} directives. This integration mirrors how a human domain expert draws on years of experience to evaluate new configurations, applying abstract principles to specific cases.
+
+
+%
+%\subsection{Difference Compared to Consistency Checkers}
+%
+%Consistency checkers, such as \textit{Diffy}~\cite{kakarla2024diffy} and \textit{Minerals}~\cite{le2006minerals}, rely on simple majority-voting statistical models to detect misconfigurations by flagging deviations from frequently observed patterns. These tools analyze configurations independently, using frequency distributions or co-occurrence statistics to determine whether a given parameter matches typical patterns. However, this approach treats all deviations as errors, ignoring context-specific nuances and relationships between parameters. As a result, consistency checkers often generate false positives and fail to account for hierarchical or interdependent relationships across configuration files.
+%
+%Transformer-based LLMs surpass consistency checkers by using probabilistic modeling and their pre-trained domain knowledge to analyze configurations holistically. Unlike majority-voting models, LLMs dynamically evaluate relationships within configuration files by leveraging their self-attention mechanisms, which consider both local and global dependencies across tokens. This enables LLMs to identify nuanced issues, such as conflicts between firewall rules and routing policies located in different sections of the file, which consistency checkers would likely miss.
+%
+%Additionally, the integration of positional encodings in LLMs ensures that command order is preserved, allowing them to evaluate procedural correctness, such as the precedence of ACL rules or the sequencing of firewall directives. By combining these capabilities with their pre-trained understanding of best practices, LLMs assess whether deviations are valid exceptions or genuine misconfigurations. This probabilistic, context-aware approach makes LLMs significantly more accurate and adaptable compared to the rigid, majority-driven logic of consistency checkers.
+
+
+\subsection{Building Context in Prompts for Accurate Misconfiguration Detection}
+
+Through this architecture and the pre-learned general network configuration
+knowledge, LLM-based Q\&A models detect subtle errors that can emerge from
+interactions among different elements—issues frequently missed by conventional
+tools. As networks grow more complex and interdependent, the model’s ability to
+holistically evaluate configurations and understand their intended functions
+makes it a valuable asset for enhancing misconfiguration detection accuracy.
+However, to realize this capability, query prompts must include all relevant
+context from the configuration file when analyzing particular configuration lines
+or excerpts, including associated segments that might reveal hidden
+misconfigurations. Incorporating this broader view of the file refines the
+model’s response by leveraging network-specific context unique to the active
+configuration, rather than relying solely on pre-learned knowledge. Without
+this detailed context, the LLM’s capacity to identify potential issues is
+significantly diminished~\cite{liskavets2024prompt,tian2024examining,khurana2024and,
+	shvartzshnaider2024llm}.
+
+\mypara{Limitations of Full-File Prompting}
+A straightforward solution to providing extensive context is to feed the entire
+configuration file to the LLM—either as a single prompt or progressively—and let
+the model detect potential misconfigurations. Yet, this approach is highly inefficient
+due to token-length constraints~\cite{xue2024repeat,yu2024breaking,gu2023mamba}.
+Moreover, it can trigger \emph{context overload}~\cite{lican,li2024long,qian2024long},
+where extraneous information distracts the model from the crucial lines in the file,
+leading to missed errors or false positives. Analogously, a human expert would likely
+be overwhelmed by an avalanche of irrelevant details, making it harder to pinpoint
+actual issues. Similarly, context overload diminishes the model’s ability to focus
+and raises the risk of missing important misconfigurations or erroneously flagging
+innocuous lines.
+
+\mypara{Challenges of Partition-Based Prompting}
+A common solution to context overload has been partition-based prompting,
+where the large and complex configuration file is broken down into smaller
+chunks or sections, typically based on the order in which the configuration
+appears in the file, such as Ciri~\cite{lian2023configuration}. 
+ Although this method eases token constraints, it also fragments
+vital context spread across multiple sections. As network configurations often include
+parameters that interact or depend on other areas of the file, merely analyzing each
+partition in isolation may overlook key interdependencies. In contrast, a proficient
+human engineer would cross-reference earlier and later sections continuously; however,
+a purely partitioned prompting approach discards this global perspective. While prompt
+chaining~\cite{wang2024identifying,bogdanov2024leveraging} can maintain some continuity
+by linking prompts together, it does not inherently address “context chaining”, and
+thus crucial interactions between file sections can remain undetected.
+
+Consider a file where firewall rules in one segment conflict with routing policies
+in another. Partition-based prompting would handle these sections separately, missing
+the cross-sectional conflict entirely. This fragmentation of context is particularly
+troublesome for dependency-related misconfigurations, which demand an integrated view
+of how distinct segments interrelate. If a given chunk of text solely contains lines
+on unrelated parameters, context about relevant policy sections is lost, rendering
+the model unable to draw necessary conclusions.
+
+In this paper, we introduce a tool that tackles these issues via a \emph{context-aware,
+	iterative prompting mechanism}. This approach strategically manages and incorporates
+only the relevant parts of the configuration for each line under review, ensuring that
+LLMs obtain the required context without succumbing to overload. In the next section,
+we discuss the specific challenges encountered during the development of this solution
+and outline our methodology in detail.
+

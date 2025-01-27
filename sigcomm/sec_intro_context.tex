@@ -1,0 +1,122 @@
+%!TEX root = main.tex
+%!TEX spellcheck = en_US
+
+\section{Introduction}
+\label{sec:intro}
+
+Detecting router misconfigurations is crucial for maintaining the stability,
+security, and performance of network infrastructures. Whether due to
+overlooked errors in existing setups or mistakes introduced during
+configuration changes, misconfigurations can lead to black holes, unintended
+network access, inefficient routes, and other performance and security
+issues.  For example, a misconfigured access control list (ACL) may allow
+unauthorized traffic, exposing the network to potential attacks; a buggy
+routing policy may create loops, rendering services inaccessible and degrading
+performance.
+
+Researchers and practitioners have developed a plethora of tools for detecting
+network misconfigurations. Model checkers~\cite{fogel2015general,
+beckett2017general, abhashkumar2020tiramisu, prabhu2020plankton, zhang2022sre,
+steffen2020netdice, ye2020hoyan, ritchey2000using,al2011configchecker,
+jeffrey2009model} model a network's routing and forwarding behaviors based on
+protocol semantics and device configurations, and check whether
+engineer-specified reachability and resilience policies are satisfied.
+Consistency checkers~\cite{kakarla2024diffy, kakarla2020finding,
+le2006minerals, feamster2005detecting,
+tang2021campion,le2008detecting,le2006characterization} compare configurations
+within and across devices and flag inconsistencies and deviations from best
+practices. LLM-based Q\&A
+tools~\cite{bogdanov2024leveraging,chen2024automatic,wang2024identifying,liu2024large,
+wang2024netconfeval, lian2023configuration} parse configuration files and
+query pre-trained sequential transformer models through prompts to detect syntax and subtle
+semantic issues.
+
+A fundamental feature of all configuration checkers is their reliance on {\em
+context}. Model checkers require protocol specifications, current (or
+proposed) device configurations, and forwarding policies; consistency checkers
+require configurations from multiple devices and a set of best practices; and
+LLMs require a sufficient number of relevant configuration lines in query
+prompts. Moreover, the correctness and completeness of this context affects 
+the accuracy of any configuration checker. For example, providing an incomplete set of
+forwarding policies, best practices, or configuration lines
+may cause misconfigurations to be missed. Similarly, improperly modeling
+protocol semantics~\cite{birkner2021metha, ye2020hoyan}, excluding certain
+configurations~\cite{xu2023netcov}, or supplying unrelated configuration
+lines~\cite{liskavets2024prompt,tian2024examining,khurana2024and,
+shvartzshnaider2024llm} may cause false alarms.
+
+Although some context is easy to provide---\eg, current
+config\-urations---many forms of context require significant manual effort.
+For example, a detailed understanding of routing protocols, their
+interactions~\cite{le2007rr}, and vendor-specific nuances~\cite{ye2020hoyan}
+is required to accurately model networks' routing and forwarding behaviors.
+Similarly, context concerning packet and route filter semantics is required to
+accurately detect inconsistencies in filter
+configurations~\cite{kakarla2020finding}.
+
+Because LLMs are typically trained on vast volumes of data---which likely
+includes protocol standards, vendor documentation, and sample
+configurations---a significant amount of \textit{generic configuration
+context} is already embedded in large-scale pre-trained models
+(PTMs)~\cite{qiu2020pre}. However, such pre-learned generic context often
+needs to be supplemented with \textit{network-specific context} included in the query prompts, which details
+the actual statements within the current configuration(s) under
+analysis. 
+Including this network-specific context in the prompt to the LLM is essential
+for detecting misconfigurations that are specific to the device or network
+being checked.
+However, state-of-the-art 
+approaches, such as feeding a device's entire configuration into a single
+prompt~\cite{lican,li2024long} can result in context and token overload,
+diluting the model's focus. On the other hand, partitioning a
+device's configuration into multiple
+prompts~\cite{lian2023configuration,chen2024automatic,wang2024identifying}
+may cause the LLM to ignore dependencies between configuration lines,
+resulting in failures to detect certain misconfigurations.
+
+In this paper, we address the problem of precisely extracting and integrating network-specific context into LLM prompts to enhance the accuracy of router misconfiguration detection. We introduce the
+Context-Aware Iterative Prompting (\sysname{}) framework, which
+solves three key challenges in this process:
+
+\mypara{Challenge 1: Automatic and Accurate Context Mining} Network
+configurations are often lengthy and
+complex~\cite{benson2009complexitymetrics}, with interrelated lines that
+require careful context extraction. The challenge lies in automatically
+identifying and extracting relevant context to reduce computational costs and
+avoid introducing irrelevant information in prompts that could impair the accuracy of
+misconfiguration detection. \textbf{Solution}: We address this challenge by
+leveraging the hierarchical structure of configuration files, modeling them as
+trees, where each line is a unique path from the root to a parameter value.
+This representation allows us to systematically mine and adhere to three core types of
+context---neighboring, similar, and referenced configuration
+statements---ensuring the LLM receives the most relevant information for
+accurate analysis.
+
+\mypara{Challenge 2: Parameter Values Ambiguity in Referenceable Context}
+Configurations contain both pre-defined and user-defined parameter values,
+with the latter requiring context for proper interpretation. For example, an
+interface might reference a user-defined access control list (ACL), which must
+be interpreted based on related configuration lines. When extracting
+referenced context, misidentifying these can lead to irrelevant context mining
+and increased computational overhead. \textbf{Solution}: To accurately
+differentiate these values, we apply an existence-based method within the
+configuration tree, identifying user-defined values by their presence as
+intermediate nodes in other paths. Additionally, we use majority-voting to
+further resolve ambiguities, ensuring consistency in how values are treated across
+different contexts.
+
+\mypara{Challenge 3 - Managing Context Overload in Prompts}
+Even with precise context extraction, the volume of relevant information can
+be large to fit in a single prompt. 
+Feeding excess context into LLMs can dilute relevance, reduce coherence, and degrade the model’s performance.
+\textbf{Solution}: Our framework mitigates the potential for context overload
+by allowing the LLM to iteratively request specific types of context, refining
+the prompt based on the model’s feedback. This approach enhances the model’s
+ability to focus on the most relevant information, leading to more precise
+misconfiguration detection and reducing the likelihood for context overload.
+
+We evaluate our framework through two distinct case studies.
+First, using configuration snapshots from real networks, we introduce {\em synthetic} misconfigurations that mirror potential operator errors. 
+We demonstrate that \sysname{} accurately infers and detects these misconfigurations, with at least 30\% more
+accuracy than conventional partition-based LLM approach, model checkers, and consistency checkers.
+Second, we exhaustively run \sysname{} on configuration snapshots from a medium-sized campus network, and \sysname{} is able to detect over 20 cases of previous overlooked misconfigurations.

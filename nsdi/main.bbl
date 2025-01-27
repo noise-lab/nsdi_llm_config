@@ -1,5 +1,13 @@
 \begin{thebibliography}{10}
 
+\bibitem{ciscosupport}
+Cisco networking software ({IOS \& NX-OS}) - support and downloads.
+\newblock \url{https://cisco.com/c/en/us/support/ios-nx-os-software}.
+
+\bibitem{junosdocumentation}
+Juniper networks - junos {OS} documentation.
+\newblock \url{https://juniper.net/documentation/product/us/en/junos-os}.
+
 \bibitem{manrs}
 Mutually agreed norms for routing security ({MANRS}).
 \newblock \url{https://manrs.org}.
@@ -90,13 +98,6 @@ Yinfang Chen, Huaibing Xie, Minghua Ma, Yu~Kang, Xin Gao, Liu Shi, Yunjie Cao,
   incidents.
 \newblock In {\em Proceedings of the Nineteenth European Conference on Computer
   Systems}, pages 674--688, 2024.
-
-\bibitem{chowdhery2023palm}
-Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra,
-  Adam Roberts, Paul Barham, Hyung~Won Chung, Charles Sutton, Sebastian
-  Gehrmann, et~al.
-\newblock Palm: Scaling language modeling with pathways.
-\newblock {\em Journal of Machine Learning Research}, 24(240):1--113, 2023.
 
 \bibitem{feamster2005detecting}
 Nick Feamster and Hari Balakrishnan.
@@ -289,11 +290,6 @@ Ronald~W Ritchey and Paul Ammann.
 \newblock In {\em Proceeding 2000 IEEE Symposium on Security and Privacy. S\&P
   2000}, pages 156--165. IEEE, 2000.
 
-\bibitem{shanahan2024talking}
-Murray Shanahan.
-\newblock Talking about large language models.
-\newblock {\em Communications of the ACM}, 67(2):68--79, 2024.
-
 \bibitem{sharma2023prosper}
 Prakhar Sharma and Vinod Yegneswaran.
 \newblock Prosper: Extracting protocol specifications using large language
@@ -332,12 +328,6 @@ Alan Tang, Siva Kesava~Reddy Kakarla, Ryan Beckett, Ennan Zhai, Matt Brown,
   Todd~D. Millstein, Yuval Tamir, and George Varghese.
 \newblock Campion: debugging router configuration differences.
 \newblock In {\em {ACM} {SIGCOMM} 2021 Conference}, 2021.
-
-\bibitem{taylor2023galactica}
-Ross Taylor, Marcin Kardas, Guillem Cucurull, Thomas Scialom, Anthony
-  Hartshorn, Elvis Saravia, Andrew Poulton, Viktor Kerkez, and Robert Stojnic.
-\newblock Galactica: A large language model for science. arxiv 2022.
-\newblock {\em arXiv preprint arXiv:2211.09085}, 10, 2023.
 
 \bibitem{tian2019jinjing}
 Bingchuan Tian, Xinyi Zhang, Ennan Zhai, Hongqiang~Harry Liu, Qiaobo Ye,
