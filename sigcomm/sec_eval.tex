@@ -14,20 +14,18 @@ We now introduce the setup for our evaluation and present the details of the cas
 
 In this section, we describe our evaluation setup.
 
-\mypara{Context Extraction Hardware Setup}
-
-
+\mypara{Context Extraction Hardware Setup:}
 \textit{System Information}: GNU/Linux Red Hat Enterprise Linux release 8.8 (Ootpa); 
 \textit{CPU Specifications}: Architecture: x86\_64; CPU(s): 32 (2 threads/core, 16 cores/socket, 1 socket); Model: AMD EPYC 7302P 16-Core Processor; Max MHz: 3000.000; L3 cache: 16384K; NUMA node0 CPU(s): 0-31 
 
 We opt not to use the GPU, as the computational cost of the context extraction and processing tasks was manageable on the CPU --- the tasks primarily benefit from parallel CPU threads, and GPU acceleration would not provide significant additional speedup.
 
 
-\mypara{LLM Model Used: GPT-4o} For running the LLM-based detection, we use GPT-4o~\cite{openai_gpt4o}, OpenAI's most recent transformer-based model designed for complex multi-step tasks.
+\mypara{LLM Model Used---GPT-4o:} For running the LLM-based detection, we use GPT-4o~\cite{openai_gpt4o}, OpenAI's most recent transformer-based model designed for complex multi-step tasks.
 
-\mysubpara{Specifications} Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
+\mysubpara{Specifications:} Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
 
-\mypara{Prompting and Query Setup}
+\mypara{Prompting and Query Setup:}
 We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration lines to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (\eg, syntax issues, policy conflicts) or general misconfigurations. Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}
 show example prompting, queries, and responses.
 
@@ -95,16 +93,16 @@ We compare \sysname{} to three representative tools: the model checker \textit{B
 \begin{table}[thb]
 \centering
 \resizebox{\columnwidth}{!}{
-\begin{tabular}{|l|l|l|l|l|l|}
+\begin{tabular}{|l|l|l|l|l|l|l|}
 \hline
-\multirow{2}{*}{\textbf{Type}} & \multirow{2}{*}{\textbf{Cases}} & \multicolumn{4}{c|}{\textbf{Number of Corrected Detected Cases}} \\ \cline{3-6} 
-&                                & \textbf{\sysname{}} & \textbf{Ciri} & \textbf{Batfish} & \textbf{Diffy} \\ \hline
-Syntax Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 3/4 (75\%) & 0/4 (0\%) \\ \hline
-Range Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 0/4 (0\%) & 0/4 (0\%) \\ \hline
-D/C Error& 8 & 8/8 (100\%) & 1/8 (12.5\%) & 2/8 (25\%) & 0/8 (0\%) \\ \hline
-\multirow{2}{*}{\makecell[{{l}}]{Original Configs\\ (No Error)}}& \multirow{2}{*}{\makecell[{{l}}]{16}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} \\ 
-&  &  &  &  &  \\ \hline
-\textbf{Total} & \textbf{32} & \textbf{32/32 (100\%)} & \textbf{21/32 (65.6\%)} & \textbf{21/32 (65.6\%)} & \textbf{16/32 (50\%)} \\ \hline
+\multirow{2}{*}{\textbf{Type}} & \multirow{2}{*}{\textbf{Cases}} & \multicolumn{5}{c|}{\textbf{Number of Corrected Detected Cases}} \\ \cline{3-7} 
+&                                & \textbf{\sysname{}} & \textbf{Ciri}& \textbf{FFP} & \textbf{Batfish} & \textbf{Diffy} \\ \hline
+Syntax Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 0/4 (0\%) & 3/4 (75\%) & 0/4 (0\%) \\ \hline
+Range Error & 4 & 4/4 (100\%) & 2/4 (50\%)& 0/4 (0\%) & 0/4 (0\%) & 0/4 (0\%) \\ \hline
+D/C Error& 8 & 8/8 (100\%) & 1/8 (12.5\%) & 0/4 (0\%)& 2/8 (25\%) & 0/8 (0\%) \\ \hline
+\multirow{2}{*}{\makecell[{{l}}]{Original Configs\\ (No Error)}}& \multirow{2}{*}{\makecell[{{l}}]{16}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{3/16 (18.8\%)}}& \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} \\ 
+&  &  &  &  & &  \\ \hline
+\textbf{Total} & \textbf{32} & \textbf{32/32 (100\%)} & \textbf{21/32 (65.6\%)} & \textbf{3/32 (9.4\%)} & \textbf{21/32 (65.6\%)} & \textbf{16/32 (50\%)} \\ \hline
 \end{tabular}}
 \caption{Synthetic Misconfiguration Detection Results.}
 \label{tab:syn_result}
@@ -114,7 +112,7 @@ The results in Table~\ref{tab:syn_result} demonstrate that \sysname{} outperform
 
 % \sysname{}'s ability to accurately mine relevant context and apply it in sequential prompts gave it a distinct advantage over the other methods, which either rely on hardcoded rules (Batfish) or predefined patterns (Diffy).
 
-\paragraph{Comparison Against Partition-based LLMs} The partition-based GPT model Ciri performs reasonably well in detecting syntax and range violations, with a detection rate of 50\% for both categories.
+\paragraph{Comparison Against Partition-based LLMs:} The partition-based GPT model Ciri performs reasonably well in detecting syntax and range violations, with a detection rate of 50\% for both categories.
 This success is due to the LLM model's training on vast, diverse text, including network-related documentation and configuration files, enabling it to recognize common syntax structures and numerical limits typically found in configurations. Transformer-based LLMs, with their self-attention mechanism, are particularly effective at identifying these common, localized issues.
 However, it lags significantly behind \sysname{} in detecting D/C issues, with a 12.5\% detection rate in this category. The primary reason for this underperformance is the partitioning approach. This approach analyzes configuration sections in isolation, failing to capture the complex interdependencies between configuration lines, which is crucial for detecting D/C issues. The only D/C misconfiguration that Ciri successfully detects is the `VRF Target Conflict,' where the conflicting `route-distinguisher' value configuration happens to be in the same prompt partition, providing just enough context for accurate detection.
 
@@ -148,7 +146,7 @@ As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues,
 
 % The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN. The mismatch between the RD and VRF target can cause routing and forwarding inconsistencies, as the control plane may attempt to map traffic to the wrong VPN instance.
 
-\paragraph{Comparison Against Non-LLM-based Tools} Batfish performs well on
+\paragraph{Comparison Against Non-LLM-based Tools:} Batfish performs well on
 syntax errors (75\% detection rate) but struggles with range violations and
 only partially detected D/C issues (2/8).  Batfish uses a rule-based model
 checker, which excels in detecting predefined syntax errors but is less
@@ -182,7 +180,7 @@ This approach is particularly valuable for detecting overlooked misconfiguration
 
 We perform exhaustive analysis using \sysname{} across 11 configuration files covering $\sim6\%$ of all devices on the campus network, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify the corresponding misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table~\ref{tab:real_results}, highlighting \sysname{}'s ability to uncover new misconfigurations. For each of misconfigurations detected by \sysname{}, we verify the correctness of the inference decision with domain experts. 
 
-\paragraph{Targeted Analysis} 
+\paragraph{Targeted Analysis:} 
 In the targeted analysis, \sysname{} demonstrates consistent performance
 in identifying misconfigurations related to incorrect VLAN assignments. Out of the six misconfigurations detected, \sysname{} correctly flags two with a true positive rate (TPR) of 33.3\%. The identified misconfigurations involved wrong VLAN assignments that caused misrouting and access issues, a high-severity problem for network operations.
 
@@ -220,7 +218,7 @@ Thus, while the false positives may appear significant, they represent deviation
 \label{tab:real_results}
 \end{table}
 
-\paragraph{Non-Targeted Analysis}
+\paragraph{Non-Targeted Analysis:}
 In the non-targeted analysis, \sysname{} was able to detect several types of misconfigurations across the provided configuration snapshots, as shown in Table~\ref{tab:real_results}.
 The detected misconfigurations were categorized by severity based on their potential impact on network operations:
 \begin{itemize}

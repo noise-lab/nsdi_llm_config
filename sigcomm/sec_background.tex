@@ -21,6 +21,7 @@ control and data planes, then analyzing or simulating whether engineer-specified
 forwarding policies are satisfied. For example, Batfish simulates the control and data
 planes under specific network conditions (\eg, link failures) and checks whether
 forwarding paths deviate from specified policies \cite{fogel2015general}.
+\aaron{Categorize Batfish as consistency checker as well; Batfish does a form of comparing with best-practices}
 Similarly, Minesweeper uses a satisfiability solver to verify whether reachability
 and load-balancing policies hold under various scenarios (\eg, all single link
 failures) \cite{beckett2017general}. Although model checkers are popular, their
@@ -126,7 +127,7 @@ Technically, transformers achieve this by employing multi-head self-attention me
 This unique architecture allows transformer-based LLMs to fundamentally surpass consistency checkers by integrating pre-trained domain knowledge with context-specific information from the configuration being analyzed, creating a much richer decision-making framework. Consistency checkers rely solely on statistical patterns derived from historical or similar data, using majority-voting logic to flag deviations as anomalies. This approach assumes that frequently observed patterns are always correct and treats all deviations as errors, regardless of whether they represent valid, context-specific configurations. As a result, consistency checkers fail to account for the underlying intent of the configuration or the broader network context, often leading to false positives and missed opportunities to understand nuanced misconfigurations.
 In contrast, LLMs integrate their pre-learned understanding of best practices with the specific configuration context provided in the prompt. By treating configurations as interconnected systems, they can assess whether deviations align with learned standards or represent genuine misconfigurations. For instance, while a consistency checker might flag a rare ACL rule as an anomaly, an LLM can reason that it is valid based on its relationships to routing policies or protocol directives elsewhere in the configuration.
 
-\aaron{The above comparison between consistency checkers and LLMs is fantastic! It would be great if we could make a similar comparison between model checkers and LLMs, highlighting both the advantages of LLMs (e.g., LLMs are fully automated whereas model checkers require manual specification of algorithms and policies) and the disadvantages (e.g., LLMs can reason about route computations but not actually computes).}
+\aaron{The above comparison between consistency checkers and LLMs is fantastic! It would be great if we could make a similar comparison between model checkers and LLMs, highlighting both the advantages of LLMs (\eg, LLMs are fully automated whereas model checkers require manual specification of algorithms and policies) and the disadvantages (\eg, LLMs can reason about route computations but not actually computes).}
 
 When a user provides configuration snippets and instructions in a prompt (\eg, “Evaluate this ACL for conflicts”), the LLM combines its pre-trained knowledge with the contextual information in the prompt. The self-attention mechanism enables the model to cross-reference tokens in the prompt with its stored knowledge, such as identifying a conflict between a firewall rule and routing policy based on probabilistic relationships learned during pretraining. By estimating the likelihood of each token or sequence (\(p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1})\)), the model highlights deviations from high-probability patterns, flagging potential misconfigurations such as overlapping IP ranges or misplaced \texttt{deny} directives. This integration mirrors how a human domain expert draws on years of experience to evaluate new configurations, applying abstract principles to specific cases.
 
@@ -159,7 +160,7 @@ this detailed context, the LLM’s capacity to identify potential issues is
 significantly diminished~\cite{liskavets2024prompt,tian2024examining,khurana2024and,
 	shvartzshnaider2024llm}.
 
-\mypara{Limitations of Full-File Prompting}
+\mypara{Limitations of Full-File Prompting:}
 A straightforward solution to providing extensive context is to feed the entire
 configuration file to the LLM—either as a single prompt or progressively—and let
 the model detect potential misconfigurations. Yet, this approach is highly inefficient
@@ -172,7 +173,7 @@ actual issues. Similarly, context overload diminishes the model’s ability to f
 and raises the risk of missing important misconfigurations or erroneously flagging
 innocuous lines.
 
-\mypara{Challenges of Partition-Based Prompting}
+\mypara{Challenges of Partition-Based Prompting:}
 A common solution to context overload has been partition-based prompting,
 where the large and complex configuration file is broken down into smaller
 chunks or sections, typically based on the order in which the configuration

@@ -19,7 +19,7 @@ process of context extraction and prompt interaction with LLMs, enabling more
 accurate router misconfiguration detection.
 
 
-\mypara{1. Context Mining Component} In this phase, \sysname{} mines all
+\mypara{1. Context Mining Component:} In this phase, \sysname{} mines all
 relevant context for a given configuration line under examination. Relevance
 here refers to configurations that, while not necessarily directly related,
 provide important insights, such as neighboring configurations, similar lines
@@ -28,7 +28,7 @@ parameters.
 
 % This context mining is designed to be both efficient and precise, extracting only the most relevant data from the configuration file without flooding the system with unnecessary information.
 
-\mypara{2. Iterative Prompting Component} Once the relevant context has been
+\mypara{2. Iterative Prompting Component:} Once the relevant context has been
 mined, the online component engages the LLM through an iterative prompting
 process. Instead of overwhelming the model with all the extracted context at
 once, \sysname{} interacts with the LLM in a guided, sequential manner.
@@ -38,8 +38,7 @@ once, \sysname{} interacts with the LLM in a guided, sequential manner.
 We now explain the challenges encountered in designing these two components and present the solutions.
 % that enable \sysname{} to perform effective context extraction and interactive prompting for misconfiguration detection.
 
-\subsection{Context Mining}\label{mining_method} \mypara{Challenge 1 -
-Efficient and accurate context mining} \label{challenge_1} Configuration files
+\subsection{Context Mining}\label{mining_method} \mypara{Challenge 1---Efficient and accurate context mining:} \label{challenge_1} Configuration files
 are often lengthy and complex, consisting of multiple related and
 interdependent lines that define various aspects of the behavior of the
 corresponding network device. When
@@ -58,7 +57,7 @@ positives or missed misconfigurations.
 
 To address this challenge, we rely on two observations:
 
-\mypara{1. Hierarchical Structure of Configuration Files}
+\mypara{1. Hierarchical Structure of Configuration Files:}
     Configuration files are typically written in a structured, hierarchical format that can be effectively modeled as a tree, as shown in the example in Figure~\ref{fig:tree}. In this tree representation (\(T\)), each node (\(V\)) corresponds to a specific configuration element, and edges represent the relationships or dependencies between these elements. Let any unique path \(
 P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \}
 \) in this tree have \(k\) nodes, where the value of \(k\) can vary depend on the path taken. The root node (\(V_1\)) represents the entry point of the configuration file (thus, it functions solely as the root of the tree, providing no semantic meaning, and remains identical regardless of the path taken), while the immediate following node (\(V_2(P)\)) corresponds to the broadest configuration category in this specific path. Intermediate nodes at subsequent levels (\( V_2(P), V_3(P), \dots, V_{k-1}(P) \)) represent increasingly nested configuration sections or subcategories, each refining the configuration context. The leaf node \(V_k(P)\) (or parameter node) represents the final configurable parameter in this path, with the associated value \(v_k(P)\), \ie, parameter values, indicating the specific configuration setting. An unique configuration line is thus a complete path in the tree, starting from the root node and terminating at a parameter node, where the path reflects the hierarchical structure and relationships defined in the configuration file.
@@ -69,7 +68,7 @@ P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V
     \label{fig:tree}
 \end{figure}
 
-    \mypara{2. Contextual Relevance from Different Aspects} We observe that
+    \mypara{2. Contextual Relevance from Different Aspects:} We observe that
     the context related to any given configuration line falls into one of
     three types, based on its position and relation within the
     configuration file as shown in the example in
@@ -77,7 +76,7 @@ P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V
     mine. They each providing unique insights that contribute to accurate
     misconfiguration detection: 
     
-    \mypara{Neighboring Configurations} are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file, making them straightforward to extract.
+    \mysubpara{Neighboring Configurations} are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file, making them straightforward to extract.
         
     \mysubpara{Similar Configurations} involve the same type of parameter or function as the configuration line under review but are applied in different contexts within the network. For example, consider configurations that assign IP addresses to different interfaces across various routers in the network. Even though the interfaces and routers may differ, the principles governing IP address assignment remain the same. By comparing these similar configurations, one can detect inconsistencies or deviations from standard practices that might indicate a misconfiguration. This type of context is essential for ensuring that configuration practices are consistent across the network, reducing the risk of errors that could lead to network outages or performance degradation. Mining these configurations is more challenging because, unlike neighboring configurations, they are not located adjacently but must be identified based on functional similarities.
 
@@ -191,8 +190,7 @@ process does not distinguish between pre-defined parameter values inherent to th
 % This lack of distinction can lead to incorrect or unnecessary context being extracted, as the system may treat a built-in parameter value the same as a user-defined one, resulting in inaccurate or misleading insights. 
 We now proceed to discuss this problem in more detail and present our solution.
 
-\mypara{Challenge 2 - Referenceable Parameter Value Ambiguity}
-
+\mypara{Challenge 2---Referenceable Parameter Value Ambiguity:}
 In network configurations, parameter values have two types: \textit{pre-defined} values and \textit{user-defined} values. Pre-defined values are those that are built into the configuration language itself, such as boolean flags (True vs. False) or access control decisions (Allow vs. Deny). These values are understood by the configuration parser and typically do not require any additional definition or context within the configuration file. On the other hand, user-defined values are customizable by the network administrator and can vary widely depending on the specific requirements of the network. These include values such as IP addresses, timeout intervals, VLAN IDs, and other numeric or alphanumeric identifiers. However, there rarely exists documentation explicit specifying these types and requires a lot of manual examination, which is hard to scale.
 
 When extracting context for referenceable configurations,
@@ -212,7 +210,7 @@ Distinguishing between pre-defined and user-defined values is crucial to avoid e
 
 \end{enumerate}
 
-\mysubpara{Existence and Majority-Voting Based Differentiation}
+\mypara{Existence and Majority-Voting Based Differentiation:}
 To accurately differentiate between pre-defined and user-defined parameter values within configuration files, we propose a solution that combines existence checks within the configuration tree and a majority-voting mechanism.
 
 \mysubpara{1. Existence-Based Differentiation:}
@@ -258,7 +256,7 @@ As we transition from context mining to utilizing the extracted information in L
 
 % A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information at once, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
 
-\mypara{Challenge 3 - Context Overload in Prompting}
+\mypara{Challenge 3---Context Overload in Prompting:}
 \label{challenge_3}
 A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information, causing it to lose focus on the most pertinent details.
 % This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
@@ -283,7 +281,7 @@ leading to several issues:
 For example, in detecting routing policy misconfigurations, a single misconfigured line may have dependencies across several sections of the file. Presenting all related context at once can cause the model to fail at prioritizing critical information, leading to missed/incorrect detection. STOA methods, such as prompt chaining, which guides the model through chained instructions, doesn't solve this issue, as it doesn't dynamically adjust or prioritize the context based on model needs.
 
 
-\mypara{Solution}
+\mypara{Solution:}
 To address these issues, \sysname{} implements an iterative, sequential prompting framework that allows the model to request and process relevant context in stages. Instead of overwhelming the model with all available context at once, \sysname{} enables the model to actively request additional information as needed. This approach enhances the model’s ability to maintain focus, coherence, and overall detection accuracy by allowing it to prioritize and process context more effectively, ensuring that only the most pertinent information is presented at each step.
 
 \mysubpara{1. Initial Prompting:} The process begins by feeding the LLM the specific configuration line under review, along with targeted instructions about the type of misconfiguration we are checking for (\eg, syntax errors, dependency conflicts, or just general misconfiguration).
@@ -317,7 +315,7 @@ This sequential, interactive approach mirrors how a network administrator might 
 
 % It ensures that the model focuses on the most critical aspects of the configuration without becoming overwhelmed by extraneous information.
 
-\mypara{Why Iterative, Requested Based Prompting Works}
+\mypara{Why Iterative, Requested Based Prompting Works:}
 By breaking down the context into smaller, more digestible portions, \sysname{} addresses the fundamental challenges of context overload. This method significantly enhances the model’s ability to:
 \begin{enumerate}
     \item Stay on target: With less irrelevant information, the model can maintain focus on the specific issue under review.
