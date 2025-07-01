@@ -1,0 +1,492 @@
+% \section{Evaluation}
+% \label{sec:eval}
+% To evaluate the effectiveness of \sysname{}, we present two test scenarios as case studies and compare \sysname{} with state-of-the-art solutions. These include:
+
+% \begin{enumerate}
+%     \item \textit{Configuration Update Verification}: In this scenario, \sysname{} is applied to specific updated configuration lines or snippets to verify whether the changes introduce misconfigurations. The updates consist of both correct and erroneous modifications to real network configuration snapshots. The evaluation focuses on \sysname{}’s ability to accurately identify any misconfigurations introduced by the updates.
+% \item \textcolor{red}{\textit{Comprehensive Configuration Verification}: \sysname{} is applied exhaustively to full configuration snapshots from (A) a medium-scale campus network using Aruba devices and (B) a large-scale campus network using Cisco devices, uncovering previously undetected misconfigurations and latent issues. This process includes both \textit{targeted detection}—focusing on known issue types (e.g., VLAN assignment inconsistencies)—and \textit{non-targeted detection}, which scans the entire configuration without prior assumptions to surface unexpected errors.}
+
+% \end{enumerate}
+
+% We now introduce the setup for our evaluation and present the details of the case studies in the subsequent sections.
+
+
+% \subsection{Evaluation Setup}
+
+% In this section, we describe our evaluation setup.
+
+% \mypara{Context Extraction Hardware Setup:}
+% \textit{System Information}: GNU/Linux Red Hat Enterprise Linux release 8.8 (Ootpa); 
+% \textit{CPU Specifications}: Architecture: x86\_64; CPU(s): 32 (2 threads/core, 16 cores/socket, 1 socket); Model: AMD EPYC 7302P 16-Core Processor; Max MHz: 3000.000; L3 cache: 16384K; NUMA node0 CPU(s): 0-31 
+
+% We opt not to use the GPU, as the computational cost of the context extraction and processing tasks was manageable on the CPU --- the tasks primarily benefit from parallel CPU threads, and GPU acceleration would not provide significant additional speedup.
+
+
+% % \mypara{LLM Model Used---GPT-4o:} For running the LLM-based detection, we use GPT-4o~\cite{openai_gpt4o}, OpenAI's most recent transformer-based model designed for complex multi-step tasks.
+
+% % \mysubpara{Specifications:} Model: GPT-4o-2024-05-13; Context window: 128,000 tokens; Max output tokens: 4,096 tokens; Training data Up to October 2023.
+
+
+
+% \mypara{LLM Models Used:} We evaluate CAIP using two state-of-the-art LLMs:
+% \begin{itemize}
+%     \item \textbf{GPT-4o}~\cite{openai_gpt4o}, OpenAI's latest multimodal transformer designed for high-precision reasoning.
+%     \item \textbf{DeepSeek-V3}~\cite{deepseekai2024deepseekv3technicalreport}, a competitive open-source transformer model from DeepSeek-AI, optimized for language and code understanding tasks.
+% \end{itemize}
+
+% \mysubpara{GPT-4o Specifications:} Model: \texttt{gpt-4o-2024-05-13}; Context window: 128,000 tokens; Max output: 4,096 tokens; Training cutoff: October 2023.
+
+% \mysubpara{DeepSeek-V3 Specifications:} Model: \texttt{deepseek-v3}; Context window: 128,000 tokens; Max output: 8,000 tokens; Training cutoff: July 2024.
+
+% \mypara{Model Usage by Scenario:}
+% \begin{itemize}
+%     \item \textbf{Configuration Update Verification abd Targeted Detection} on Campus A: \textcolor{red}{Only GPT-4o} is used to analyze specific updated configuration lines and verify whether they introduce new misconfigurations.
+%     \item \textbf{Comprehensive Configuration Verification (Non-Targeted Detection)} on Campuses A and B: \textcolor{red}{Both GPT-4o and DeepSeek-V3} are used to scan full configuration snapshots for previously undetected issues, without prior assumptions or labels.
+% \end{itemize}
+
+
+% \mypara{Prompting and Query Setup:}
+% We use OpenAI’s Chat Completions API to interact with GPT-4o. The system was provided with a structured conversation history to maintain context across multiple queries. For each query, the model was tasked with analyzing the configuration lines to detect potential misconfigurations, with instructions tailored to focus on specific misconfiguration types (\eg, syntax issues, policy conflicts) or general misconfigurations. Figures~\ref{fig:initial_prompt} and ~\ref{fig:feedback_and_response}
+% show example prompting, queries, and responses.
+
+
+\section{Evaluation}
+\label{sec\:eval}
+To evaluate the effectiveness of \sysname{}, we design and conduct two case study scenarios representing realistic deployment use cases. These scenarios allow us to examine \sysname{}\textquotesingle s capabilities under both targeted and open-ended conditions, and to compare its behavior against state-of-the-art detection methods.
+
+\begin{enumerate}
+\item \textit{Configuration Update Verification}: This scenario focuses on verifying the correctness of incremental configuration changes. \sysname{} is applied to recent updates in campus network configurations, each consisting of a set of added or modified lines. These updates include both correct and faulty changes, grounded in real network deployment logs. The objective is to determine whether \sysname{} can accurately detect misconfigurations introduced specifically by the updates, without scanning the full configuration.
+
+\item \textit{Comprehensive Configuration Verification}: In this broader scenario, \sysname{} is applied to entire configuration snapshots drawn from (A) a medium-scale campus network using Aruba devices and (B) a large-scale campus network using Cisco devices. Unlike the previous task, no update information is provided. Instead, \sysname{} must examine full configurations to surface misconfigurations. We evaluate both \textit{targeted detection}—focusing on known issue types (\eg, VLAN assignment errors, port misalignments), using only configurations from Campus A where such issues are known to occur—and \textit{non-targeted detection}, where the goal is to identify latent issues in a free-form scan across both Campus A and Campus B.
+
+\end{enumerate}
+
+We now describe the setup used to support these evaluation scenarios and provide detailed findings in subsequent sections.
+
+\subsection{Evaluation Setup}
+
+\mypara{Context Extraction Hardware Setup:}
+\textit{System Information}: GNU/Linux Red Hat Enterprise Linux release 8.8 (Ootpa);
+\textit{CPU Specifications}: Architecture: x86\_64; CPU(s): 32 (2 threads/core, 16 cores/socket, 1 socket); Model: AMD EPYC 7302P 16-Core Processor; Max MHz: 3000.000; L3 cache: 16384K; NUMA node0 CPU(s): 0--31.
+
+We do not use GPU acceleration in our experiments, as the context extraction and orchestration logic within \sysname{} is CPU-parallelizable and does not benefit significantly from GPU throughput.
+
+\mypara{LLM/GPT Models Used:}
+We evaluate \sysname{}\textquotesingle s performance under two LLM backends:
+\begin{itemize}
+\item \textbf{GPT-4o}~~\cite{openai_gpt4o}: OpenAI's latest model optimized for complex reasoning and long-context tasks. \textit{Specifications:} Context window: 128,000 tokens; Max output: 4,096 tokens; Training cutoff: October 2023.
+\item \textbf{DeepSeek-V3 (DS)}~~\cite{deepseekai2024deepseekv3technicalreport}: An open-source transformer developed by DeepSeek-AI, suited for structured code and configuration analysis. \textit{Specifications:} Context window: 128,000 tokens; Max output: 8,000 tokens; Training cutoff: July 2024.
+\end{itemize}
+
+\mypara{Model Usage by Scenario:}
+\begin{itemize}
+\item \textbf{Configuration Update Verification.} \textcolor{red}{Only one model (GPT-4o)} is used for this task. This setting is used to test whether a widely available, general-purpose LLM is sufficient for accurately identifying misconfigurations in well-scoped scenarios. Since the detection task is clearly defined and limited to specific configuration updates, a single model is adequate for evaluating feasibility.
+
+\item \textbf{Comprehensive Configuration Verification.} \textcolor{red}{Both GPT-4o and DeepSeek-V3} are used. This setup is intentionally open-ended, allowing us to evaluate whether model choice affects misconfiguration discovery. Additionally, because this task relies on \sysname{}'s iterative prompting mechanism (CAIP), we can observe whether different models exhibit divergent patterns in their context requests, reasoning steps, or detection results. This comparison helps us understand the sensitivity of the CAIP pipeline to the underlying language model.
+\end{itemize}
+
+
+\mypara{Prompting and Query Setup:}
+We use OpenAI and DeepSeeks's Chat Completions APIs to query GPT-4o and DS, respectively. Each interaction includes a structured conversation history to simulate persistent reasoning. Prompts are crafted based on the scenario type: in the targeted setting, the prompts focus on verifying specific change lines or known risks; in the non-targeted setting, the model is instructed to surface any misconfigurations based on general policy correctness and best practices. Figures~\ref{fig:initial_prompt} and~\ref{fig:feedback_and_response} provide representative examples.
+
+\subsection{Case Study 1: Configuration Update Verification}
+We first test \sysname{}'s effectiveness in handling configuration updates, aiming to verify its ability to capture various types of misconfigurations and accurately assess detection performance in a controlled environment.
+Router misconfigurations are broadly categorized into three types:
+\begin{itemize}
+    \item \textit{Syntax errors} occur when the configuration does not adhere to the expected format or structure---\eg, a missing bracket or misused keyword in a BGP routing policy.
+    \item \textit{Range violations} involve parameter values that fall outside the acceptable range---\eg, an MTU value that exceeds the maximum allowed for a specific interface type.
+    \item \textit{Dependency/conflict (D/C) issues} arise when different configuration lines are incompatible or contradict each other---\eg, a firewall rule might block traffic that another policy explicitly permits.
+\end{itemize}
+
+
+\begin{table}[tb]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Type} & \textbf{Description} & \textbf{Misconfig} & \textbf{Requested Context}\\ \hline
+
+\multirow{4}{*}{\textbf{Syntax}} 
+& Missing brace &...interfaces: \{\textcolor{red}{"<ge-*"}: & None\\ \cline{2-4}
+& Invalid keyword & ...mtu: \textcolor{red}{"True"}   & \( N(P) \), \( R(P) \)\\ \cline{2-4}
+& Incorrect hierarchy & ...host-name: \textcolor{red}{"\{rtsw.alba-re1\}"}  & \( N(P) \)\\ \cline{2-4}
+& Invalid IP address & ...neighbor: \textcolor{red}{192.168.253.1.1}" & \( N(P) \), \( R(P) \)\\ \hline
+
+\multirow{4}{*}{\textbf{Range}}  
+& Invalid MTU & ...mtu: \textcolor{red}{"10000"}  & \( N(P) \), \( R(P) \)\\ \cline{2-4}
+& Invalid VLAN ID & ...vlan-id: \textcolor{red}{"5000"}  & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
+& Invalid AS & ...autonomous-system: \textcolor{red}{70000} & \( N(P) \), \( R(P) \) \\ \cline{2-4}
+& Invalid prefix limit & ...maximum: \textcolor{red}{"200000"} & \( N(P) \), \( R(P) \)  \\ \hline
+
+\multirow{8}{*}{\textbf{D/C}}  
+& Non-existent group & ... apply-groups: \textcolor{red}{"L2-LSP-ATTRIBUTES”} & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
+& Policy Conflict & ...community \textcolor{red}{add I2CLOUD-EXTENDED-TARGET}  & \( N(P) \), \( R(P) \), \( N(R(P)) \) \\ \cline{2-4}
+& Non-existent filter & ...input-list: \textcolor{red}{"uplink"} & \( N(P) \), \( R(P) \)  \\ \cline{2-4}
+& Non-existent policy & ...export: \textcolor{red}{"OESS-400-300-LOOP} & \( R(P) \)  \\ \cline{2-4}
+& Incorrect Filter Usage & ...family mpls: filter:input-list:\textcolor{red}{"v6filter"} & \( R(P), S(P) \)  \\ \cline{2-4}
+& Disabled Sampling & ...family inet6: \textcolor{red}{SAMPLING MISSING/DISABLED}& \( R(P), N(P) \)  \\ \cline{2-4}
+& VRF Target Conflict & ...vrf-target target:11537:\textcolor{red}{"313001"}& \( S(P) \)  \\ \cline{2-4}
+& Abnormal Small MTU & ...family iso: mtu: \textcolor{red}{"1497"}& \( R(P), S(P) \)  \\ \hline
+\end{tabular}}
+\caption{Erroneous Configuration Updates Introduced and LLM Requested Context for \sysname{}.}
+\label{tab:syn_configs}
+\end{table}
+ 
+To evaluate \sysname{}, we obtained snapshot configurations from Internet2 (Juniper devices) and introduced 32 updates, comprising 16 correct and 16 erroneous modifications across three misconfiguration types. 
+For syntax and range errors, we created four distinct misconfigurations each, totaling 8 errors (see Table~\ref{tab:syn_configs}). For D/C misconfigurations, we introduced 8 distinct errors, as vanilla LLMs excel at detecting syntax and range issues, while \sysname{}’s context mining is particularly effective at uncovering nuanced D/C issues. The additional D/C errors allow us to thoroughly assess this capability.
+For each update, we run \sysname{} by following the two components: (1) treating the updated line as the line under review and extracting all relevant context, and (2) conducting the iterative, sequential prompting process against the model, obtaining the final misconfiguration detection decision.
+
+For this case study, the CAIP implementation is powered by \textbf{GPT-4o}. When forming the prompt, we explicitly instruct the model to look for each type of misconfiguration—syntax, range, or dependency/conflict—individually. This is because the model may request different types of context depending on the specific misconfiguration type it is trying to detect. We report only the results corresponding to the actual misconfiguration type introduced. Importantly, \sysname{} never yielded false positives when the model was instructed to find a misconfiguration type different from the actual type. Additionally, we find that asking the model to search for `GENERAL' misconfigurations also led to successful detection, though more context was often requested by the model.
+
+We compare \sysname{} to four representative tools: two consistency checkers including \textit{Batfish}~\cite{fogel2015general} and \textit{Diffy}~\cite{kakarla2024diffy}, a full-file prompting-based GPT Q\&A Model (\textit{FFP}), and the partition-based GPT Q\&A model \textit{Ciri}~\cite{lian2023configuration}. Both of the GPT Q\&A models use GPT-4o for fair comparison. 
+
+\begin{table}[thb]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\multirow{2}{*}{\textbf{Type}} & \multirow{2}{*}{\textbf{Cases}} & \multicolumn{5}{c|}{\textbf{Number of Corrected Detected Cases}} \\ \cline{3-7} 
+&                                & \textbf{\sysname{}} & \textbf{Ciri}& \textbf{FFP} & \textbf{Batfish} & \textbf{Diffy} \\ \hline
+Syntax Error & 4 & 4/4 (100\%) & 2/4 (50\%) & 0/4 (0\%) & 3/4 (75\%) & 0/4 (0\%) \\ \hline
+Range Error & 4 & 4/4 (100\%) & 2/4 (50\%)& 0/4 (0\%) & 0/4 (0\%) & 0/4 (0\%) \\ \hline
+D/C Error& 8 & 8/8 (100\%) & 1/8 (12.5\%) & 0/4 (0\%)& 2/8 (25\%) & 0/8 (0\%) \\ \hline
+\multirow{2}{*}{\makecell[{{l}}]{Correct Config\\ Updates}}& \multirow{2}{*}{\makecell[{{l}}]{16}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{3/16 (18.8\%)}}& \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} & \multirow{2}{*}{\makecell[{{l}}]{16/16 (100\%)}} \\ 
+&  &  &  &  & &  \\ \hline
+\textbf{Total} & \textbf{32} & \textbf{32/32 (100\%)} & \textbf{21/32 (65.6\%)} & \textbf{3/32 (9.4\%)} & \textbf{21/32 (65.6\%)} & \textbf{16/32 (50\%)} \\ \hline
+\end{tabular}}
+\caption{Configuration Update Verification Results.}
+\label{tab:syn_result}
+\end{table}
+
+The results in Table~\ref{tab:syn_result} demonstrate that \sysname{} outperforms the other tools in detecting all three types of misconfigurations. It achieves a perfect 16/16 detection rate across the board for misconfigurations. This indicates that \sysname{}'s comprehensive context mining and iterative prompting process effectively identify errors in network configurations, even in more complex cases like D/C issues. In contrast, the other tools showed limitations, particularly when it came to detecting range violations and D/C issues.
+
+\paragraph{Comparison Against Full-File Prompting and Partition-based LLMs:} The partition-based GPT model Ciri performs reasonably well in detecting syntax and range violations, with a detection rate of 50\% for both categories.
+This success is due to the LLM model's training on vast, diverse text, including network-related documentation and configuration files, enabling it to recognize common syntax structures and numerical limits typically found in configurations. Transformer-based LLMs, with their self-attention mechanism, are particularly effective at identifying these common, localized issues.
+However, it lags significantly behind \sysname{} in detecting D/C issues, with a 12.5\% detection rate in this category. The primary reason for this underperformance is the partitioning approach. This approach analyzes configuration sections in isolation, failing to capture the complex interdependencies between configuration lines, which is crucial for detecting D/C issues. The only D/C misconfiguration that Ciri successfully detects is the `VRF Target Conflict,' where the conflicting `route-distinguisher' value configuration happens to be in the same prompt partition, providing just enough context for accurate detection.
+
+As shown in Table~\ref{tab:syn_configs} and~\ref{tab:syn_responses}, D/C issues, such as policy conflicts, require the model to understand and analyze interactions between different configuration elements.
+Full-File Prompting (FFP) attempts to overcome partitioning limitations by providing the entire configuration in a single query but proves even less effective than Ciri, failing to detect any misconfigurations. Its primary drawbacks are \textit{token limitations}—where configurations exceeding the model’s 128,000-token window lead to truncation—and \textit{context overload}, where excessive information prevents the model from prioritizing relevant details. 
+
+\sysname{} addresses these issues by guiding the LLM to request the relevant contextual information it needs for accurate reasoning and detection. The example \sysname{}-enabled LLM responses in Table~\ref{tab:syn_responses} clearly show that these contexts are being leveraged to derive correct detection results. By dynamically retrieving only the necessary context, \sysname{} eliminates the fragmentation issues inherent in partition-based methods while avoiding the information saturation problem of FFP. This ensures that the model retains a holistic yet focused understanding of configuration interdependencies, improving its ability to identify complex misconfigurations.
+\begin{table}[ht]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|l|l|l|p{8cm}|} % Define a fixed width for the Reason column
+\hline
+\textbf{Type} & \textbf{Misconfig} & \textbf{errParameter} & \textbf{Reason}\\ \hline
+
+\multirow{3}{*}{\textbf{Syntax}} & \multirow{3}{*}{Missing brace} & \multirow{3}{*}{["<ge-*>"]} & "MTU value for 'family inet' is set to 9174 which is less than the interface MTU value of 9192. The MTU for 'family inet' should not be less than the interface MTU."\\\hline
+
+\multirow{4}{*}{\textbf{Range}} & \multirow{4}{*}{Invalid VLAN ID} & \multirow{3}{*}{["maximum"]} & "The 'maximum' value of 200000 in the configuration line under review significantly exceeds the 'maximum' values of 1000 found in similar configuration lines, indicating a potential range misconfiguration."\\\hline
+
+\multirow{20}{*}{\textbf{D/C}} & \multirow{5}{*}{Policy Conflict} & \multirow{5}{*}{["remove-comms-rt"]} & "There is a conflict in the configuration under term 'remove-comms-rt' where the action 'community add I2CLOUD-EXTENDED-TARGET' is followed by 'community delete I2CLOUD-EXTENDED-TARGET' which are contradictory actions."\\\cline{2-4}
+
+ & \multirow{5}{*}{Disabled Sampling} & \multirow{5}{*}{["inet6"]} & "The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6."\\\cline{2-4}
+ & \multirow{5}{*}{VRF Target Conflict} & \multirow{5}{*}{["target"]} & "The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN."\\\cline{2-4}
+ & \multirow{5}{*}{Incorrect Filter Usage} & \multirow{5}{*}{["input-list"]} & "The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6."\\\hline
+\end{tabular}}
+\caption{Example LLM Reasoning for \sysname{}.}
+\label{tab:syn_responses}
+\end{table}
+
+% The family mpls is incorrectly using the IPv6 filter inet6-sample v6filter, which is intended for family inet6 in similar configuration lines. MPLS traffic should have its own specific filter, as the filtering requirements for MPLS are different from those for IPv6.
+
+% IPv4 (family inet) and MPLS (family mpls) have sampling enabled in neighboring configurations, but IPv6 (family inet6) does not. This inconsistency in sampling configurations across different protocol families can cause issues in traffic monitoring and troubleshooting, as some traffic will be sampled and other traffic will not.
+
+% The route-distinguisher (RD) in neighoring configurations is set to 11537:381841, while the vrf-target is set to target:11537:313001. These values should typically align, or at least follow certain conventions for mapping VRFs to the correct target instances in MPLS/BGP L2VPN. The mismatch between the RD and VRF target can cause routing and forwarding inconsistencies, as the control plane may attempt to map traffic to the wrong VPN instance.
+
+\paragraph{Comparison Against Non-LLM-based Tools:} Batfish performs well on
+syntax errors (75\% detection rate) but struggles with range violations and
+only partially detected D/C issues (2/8). In our use case, Batfish operates as a consistency checker against a predefined set of best practices, verifying configurations against expected syntactic and structural rules. 
+This makes it effective at catching explicit errors, such as missing keywords or incorrect formatting, but less capable of handling misconfigurations that require deeper contextual reasoning, such as dependency conflicts or range violations. Specifically, Batfish 
+detects issues related to non-existent groups and policies (hard-coded into its
+rule checks) but missed more subtle D/C misconfigurations, like policy
+conflicts or filter dependencies.
+
+Diffy performs poorly across all misconfigurations, with a 0/16 detection rate, due to its data-driven approach, which focuses on learning common usage patterns from configurations and flagging anomalies as potential bugs. While effective for detecting clear deviations from standard patterns in other configuration files,
+% Diffy struggles with context-dependent or subtle misconfigurations, such as dependency/conflict (D/C) issues, that require a deeper understanding of configuration context and dependencies. 
+complex issues like policy conflicts or range violations may not deviate from typical patterns but still be incorrect, which Diffy’s template-based anomaly detection cannot capture. Furthermore, Diffy's reliance on identifying deviations from learned patterns makes it less effective at detecting syntax errors and range violations. These types of misconfigurations often follow standard formatting and numerical values that may not stand out as anomalies, making them difficult for Diffy to detect without a granular understanding of configuration structure and constraints.
+
+Finally, despite varying performance in detecting misconfigurations, the majority of the tools, including \sysname{}, Batfish, Diffy, and the partition-based GPT model Ciri, successfully marked all correct updates as valid, indicating strong capabilities in avoiding false positives for correctly functioning configurations. 
+However, FFP failed in this aspect, falsely classifying 3 out of 16 correctly configured updates as misconfigurations. This hallucination likely stems from FFP’s inability to effectively filter relevant information within a large configuration file, leading the model to generate erroneous assessments based on misplaced context or incorrect pattern associations. 
+
+\subsection{Case Study 2: Comprehensive Configuration Verification}
+In this case study, we obtain
+Aruba and Cisco router configuration snapshots from a medium-scale campus network (Campus A) and a large-scale campus network (Campus B), respectively.
+Unlike the previous case study, which focused on verifying updates, this evaluation assesses \sysname{}'s ability to detect misconfigurations across entire network configurations without prior knowledge of specific changes.
+We have three objectives: (1) to verify the scalability of \sysname{} when applied to larger network configurations, (2) to investigate whether \sysname{} can detect potential misconfigurations that have not yet been identified by existing tools, and (3) to evaluate whether different LLM backends surface distinct issues or follow different context request patterns, thereby assessing the impact of model choice on detection outcomes.
+
+We perform two types of analysis, beginning with \textit{targeted misconfiguration detection:} A key aspect of this case study is the demonstration of \sysname{}'s flexibility in integrating additional context types under different scenarios. This is particularly useful when network operators have prior domain knowledge about specific misconfigurations they are trying to detect that fall outside of \sysname{}'s default context library.
+To illustrate this flexibility, we consult the network operators who provided the configuration snapshots for Campus A. They were specifically interested in detecting incorrect `VLAN assignments' --- a type of misconfiguration that often requires a network-wide view. Such misconfigurations are usually identifiable only when considering the configurations of other devices in the same network, as deviations from uniform configurations can indicate potential issues.
+To address this, we introduce an additional, default context type, called `Intra-Router Consistency Context'.  This context type mines  the prevalence of the same parameter-value pair across other devices in the network, providing insights into whether a configuration is common or potentially erroneous. For this scenario, we modify the initial prompt to focus specifically on detecting `WRONG VLAN ASSIGNMENT'.
+
+Example Intra-Router Consistency Context extracted:
+
+\textit{`For the Configuration Line Under Review, the same configuration is found in 189 out of 191 other configuration files. (Significantly lower prevalence may indicate an uncommon or potentially erroneous configuration.)'}
+
+The second analysis involves \textit{non-targeted misconfiguration detection}, where \sysname{} uses its default context library to aim the LLM for detecting general misconfigurations without prior knowledge of specific issues. In this mode, no specific misconfiguration type is provided to the model; instead, \sysname{} exhaustively analyzes the entire configuration file to identify `GENERAL' errors. 
+This approach is particularly valuable for detecting overlooked misconfigurations in large, complex network environments where errors may not be immediately obvious or anticipated. By running \sysname{} in this mode, we assess its ability to detect subtle misconfigurations across the network without predefined expectations, ensuring it can operate effectively even when network operators are unsure of the specific issues they might face.
+
+We perform exhaustive analysis using \sysname{} across 14 total configuration files from Campus A and B, applying the context mining framework to extract all relevant context for each configuration line. We then prompt the model to identify the corresponding misconfigurations, allowing it to dynamically request the necessary context during the iterative prompting phase. The detection results are presented in Table~\ref{tab:real_results}, highlighting \sysname{}'s ability to uncover new misconfigurations. For each of misconfigurations detected by \sysname{}, we verify the correctness of the inference decision with domain experts. 
+
+\paragraph{Model Usage:} For both the targeted VLAN assignment analysis and the non-targeted misconfiguration detection, we run \sysname{} with two LLM backends: \textbf{GPT-4o} and \textbf{DeepSeek-V3}. This setup allows us to evaluate not only the effectiveness of CAIP across different detection scopes, but also to examine whether model choice influences detection behavior—\eg., surfacing distinct issues or following different context request patterns.
+
+\paragraph{Targeted Analysis:} 
+In the targeted analysis, \sysname{} demonstrates perfect accuracy in identifying misconfigurations related to incorrect VLAN assignments, correctly detecting 6 out of 6 cases (100\% true positive rate). Among these, two were previously unnoticed yet genuine misconfigurations that caused misrouting and access issues, representing high-severity problems for network operations.
+The remaining four cases were intentional deliberate misconfigurations applied to test/experiemental devices.
+
+We ran this analysis using both GPT-4o and DS, and both models yielded identical results. To further validate these findings, we compared \sysname{}'s results against the network team’s internal graph-based verification tool, which checks intra-router consistency. Both tools produced consistent outcomes, reinforcing \sysname{}'s effectiveness in detecting critical issues.
+
+
+
+\begin{table}[tb]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\multirow{2}{*}{\makecell[{{l}}]{\textbf{Analysis} \\ \textbf{Type}}} & \multirow{2}{*}{\makecell{\textbf{Misconfigs}}} & \multirow{2}{*}{\makecell{\textbf{Count}}} &  \multirow{2}{*}{\makecell{\textbf{Severity (Reason)}}} &\multirow{2}{*}{\makecell[{{l}}]{\textbf{True Positive}\\ \textbf{Rate (TPR)}}}\\
+&&&& \\\hline
+\multirow{2}{*}{\makecell[{{l}}]{Targeted}} &\multirow{2}{*}{\makecell[{{l}}]{Wrong VLAN\\Assignment}} & \multirow{2}{*}{\makecell{6}} & 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{High}: Wrong VLANs permitted in configuration, causing\\access issues.}} & \multirow{2}{*}{\makecell{6/6 (100\%)}}\\ 
+&&&& \\\hline
+\multirow{8}{*}{\makecell[{{l}}]{Non-\\Targeted}} &\multirow{2}{*}{\makecell[{{l}}]{Invalid Subnet\\ Mask}} & \multirow{2}{*}{\makecell{2}} & 
+% \multirow{2}{*}{\makecell{\textit{High}: Unconventional subnet mask usage (255.255.\\253.0), violating binary boundary rules.}} 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{High}: Subnet mask usage, \eg, 255.255.253.0) \\violating binary boundary rules.}} 
+& \multirow{2}{*}{\makecell{2/2 (100\%)}}\\ 
+&&&& \\\cline{2-5}
+
+ &\multirow{2}{*}{\makecell[{{l}}]{Inconsistent \\Policy Naming}} & \multirow{2}{*}{\makecell{14}} & 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{Low}: Misnamed `smnpread' for `snmp\_communities',but with consistent usage.}} & \multirow{2}{*}{\makecell{14/14 (100\%)}}\\ 
+&&&& \\\cline{2-5}
+ &\multirow{2}{*}{\makecell[{{l}}]{Insecure SSH \\KEX Algorithm}} & \multirow{2}{*}{\makecell{1}} & 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{Low}: Insecure `diffie-hellman-group14-sha1' used\\(low risk as stronger algorithms are included).}} & \multirow{2}{*}{\makecell{1/1 (100\%)}}\\ 
+&&&& \\\cline{2-5}
+&\multirow{2}{*}{\makecell[{{l}}]{Ambiguous Rate\\Limit Values}} & \multirow{2}{*}{\makecell{2}} & 
+\multirow{2}{*}{\makecell[{{l}}]{\textit{Ambiguous}: `Interval' and `burst' set to 0, leading\\ to nondeterministic behaviors.}} & \multirow{2}{*}{\makecell{2/2 (100\%)}}\\ 
+&&&& \\\hline
+\end{tabular}}
+\caption{Comprehensive Real Configuration Snapshot Verification Results (Campus A): \sysname{}-Detected Misconfigurations}
+\label{tab:real_results}
+\end{table}
+
+
+\begin{table}[tb]
+\centering
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{|l|c|l|l|}
+\hline
+\textbf{Misconfiguration Type (False Positives)} & \textbf{Count} & \textbf{GPT-4o Decision} & \textbf{DeepSeek Decision} \\
+\hline
+\textit{Duplicate or overlapping DHCP helpers} & 8 & Misconfig (8/8) & 4 Misconfig, 4 No Misconfig \\
+\hline
+\textit{Missing VLANs in trunk links} & 9 & Misconfig (9/9) & No Misconfig (9/9) \\
+\hline
+\textit{Uncoordinated channel-group assignment} & 2 & Misconfig (2/2) & No Misconfig (2/2) \\
+\hline
+\textit{Unexpected PIM passive usage} & 2 & Misconfig (2/2) & No Misconfig (2/2) \\
+\hline
+\end{tabular}}
+\caption{Campus B Non-Targeted Snapshot: All configurations flagged as misconfigurations were later validated as \textbf{correct} (\ie, \textit{false positives}).}
+\label{tab:grouped_misconfig_analysis}
+\end{table}
+
+
+
+% \begin{table*}[tb]
+% 	\centering
+% 	\resizebox{\textwidth}{!}{
+% 		\begin{tabular}{|l|l|l|l|p{6cm}|l|p{6cm}|l|}
+% 			\hline
+% 			\textbf{Config Line} & \textbf{Error Param} & \textbf{GPT-4o Decision} & \textbf{GPT-4o Reason} & \textbf{GPT-4o Requested Context} & \textbf{DeepSeek Decision} & \textbf{DeepSeek Reason} &  \textbf{DeepSeek Requested Context}\\
+% 			\hline
+% 			interface-->Vlan18-->ip-helper-address=128.135.249.50 & ip-helper-address & Misconfig & 1 & Same helper address across VLANs may cause DHCP relay issues. & No Misconfig & N/A & 1, 2, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/0/9-->channel-group 1-->mode=active & channel-group & Misconfig & 2 & Channel-group assignment may conflict if not intended to span interfaces. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/0/10-->switchport-->trunk-->allowed-vlan=12,50-55 & allowed-vlan & Misconfig & 2& VLAN 10 missing compared to adjacent interfaces, risking disruption. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan18-->ip-helper-address=128.135.247.50 & ip-helper-address & Misconfig& 2 & Shared helper IP across many VLANs; ACLs must align. & No Misconfig & N/A & 1, 2, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/0/8-->channel-group 4-->mode=active & channel-group & Misconfig & 2& Aggregation group must be intentional to avoid conflicts. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Port-channel1-->switchport-->trunk-->allowed-vlan=12,50-55 & allowed-vlan & Misconfig& 1, 2 & VLAN 10 omitted; may disrupt inter-switch traffic. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan19-->ip-->pim-->passive=True & ip pim passive & Misconfig & None& 'passive' uncommon in PIM; likely unintended. & No Misconfig & N/A & 2\\
+% 			\hline
+% 			interface-->Vlan13-->ip-->pim-->passive=True & pim passive & Misconfig & 2& Disables PIM on this interface; may affect multicast. & No Misconfig & N/A & 2\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/0/22-->switchport-->trunk-->allowed-vlan=10,13,50-55,64 & allowed-vlan & Misconfig& 2, 4 & VLAN 11 excluded here but present elsewhere; risks segmentation. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan16-->ip-helper-address=10.52.18.55 & ip-helper-address & Misconfig & 1, 2& Overlapping helper IPs across VLANs can confuse DHCP relay. & Misconfig & Duplicate DHCP helper on Vlan16 & 1, 4\\
+% 			\hline
+% 			interface-->Vlan64-->ip-helper-address=128.135.247.50 & ip-helper-address & Misconfig & 1,2& Conflict with other helper IPs or name-server assignments. & No Misconfig & N/A & 1, 2, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/1/8-->switchport-->mode=trunk & allowed-vlan & Misconfig & None& Missing VLAN 11; inconsistent across channel interfaces. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Port-channel5-->switchport-->mode=trunk & allowed-vlan & Misconfig & None& VLAN 11 missing in trunk compared to others. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan13-->ip-helper-address=10.50.18.65 & ip-helper-address & Misconfig& 1, 3  & Multiple DHCP helpers on one VLAN without priority. & Misconfig & Multiple DHCP helpers on Vlan13 & 1, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/0/21-->switchport-->mode=trunk & allowed-vlan & Misconfig & 1, 2& VLAN 11 missing here; could cause communication issues. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan64-->ip-helper-address=128.135.247.150 & ip-helper-address & Misconfig& 1, 2 & Appears in many ACLs and VLANs; relay may be misrouted. & Misconfig & Multiple DHCP helpers on Vlan64 & 1, 2, 4\\
+% 			\hline
+% 			interface-->Port-channel11-->switchport-->mode=trunk & allowed-vlan & Misconfig& None & VLAN 11 missing in this config, present in others. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan16-->ip-helper-address=128.135.247.150 & ip-helper-address & Misconfig & 1, 2& Multiple helpers in one VLAN may conflict. & Misconfig & 5 helper IPs on Vlan16 & 1, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/1/2-->switchport-->mode=trunk & allowed-vlan & Misconfig & 1, 3& VLAN 16 present only here; others omit it. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 			interface-->Vlan16-->ip-helper-address=128.135.247.50 & ip-helper-address & Misconfig& 2 & IP used for both DHCP and DNS; may overlap roles. & No Misconfig & N/A & 1, 2, 4\\
+% 			\hline
+% 			interface-->TenGigabitEthernet1/1/4-->switchport-->mode=trunk & allowed-vlan & Misconfig& None & Allowed VLAN list inconsistent with port-channel5. & No Misconfig & N/A & 1, 4\\
+% 			\hline
+% 	\end{tabular}}
+% 	\caption{Misconfiguration Analysis Comparison: GPT-4o vs DeepSeek}
+% 	\label{tab:misconfig_analysis}
+% \end{table*}
+
+
+
+\begin{table}[ht]
+	\centering
+	\resizebox{\columnwidth}{!}{
+		\begin{tabular}{|l|c|c|}
+			\hline
+			\textbf{Context Type} & \textbf{Percent of Requests} & \textbf{Avg. Token Count} \\
+			\hline
+			Adjacent Configuration Lines (1) & 24.85\% & 68.88 \\
+			Definitions Related to Config Line (2) + \newline Other Config Lines & 71.21\% & 143.64 \\
+			Definitions Related to Adjacent Config Lines (3) & 1.21\% & 26.00 \\
+			Similar Config Lines Across Files (4) & 2.73\% & 76.22 \\
+			\hline
+			\textbf{Total average per entry} & --- & 180.23 \\
+			\hline
+		\end{tabular}
+	}
+	\caption{Distribution and average token count of \texttt{additional\_info} context blocks in CAIP (GPT-4o backend; all queries).}
+	\label{tab:caip_token_dist_gpt4o}
+\end{table}
+
+\textcolor{red}{update definition on similar config across single and multiple files}
+\begin{table}[ht]
+	\centering
+	\resizebox{\columnwidth}{!}{
+		\begin{tabular}{|l|c|c|}
+			\hline
+			\textbf{Context Type} & \textbf{Percent of Requests} & \textbf{Avg. Token Count} \\
+			\hline
+			Adjacent Configuration Lines (1) & 39.47\% & 58.30 \\
+Definitions Related to Config Line (2) + \newline Other Config Lines & 13.18\% & 102.15 \\
+Definitions Related to Adjacent Config Lines (3) & 7.32\% & 34.40 \\
+Similar Config Lines Across Files (4) & 40.03\% & 70.10 \\
+
+			\hline
+			\textbf{Total average per entry} & --- & 147.90 \\
+			\hline
+		\end{tabular}
+	}
+	\caption{Distribution and average token count of \texttt{additional\_info} context blocks in CAIP (DeepSeek backend; all queries).}
+	\label{tab:caip_token_dist_deepseek_uniform}
+\end{table}
+
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{figs/context_usage_campus_a_b_combined.png}
+    \caption{Distribution of context categories requested by GPT-4o and DS.}
+    \label{fig:context-usage}
+\end{figure}
+
+\paragraph{Non-Targeted Analysis (Campus A):}
+In the non-targeted analysis for Campus A snapshots, \sysname{} was able to detect several types of misconfigurations across the provided configuration snapshots, as shown in Table~\ref{tab:real_results}. The detection results are consistent between both implementations of \sysname{} with GPT-4o and DS.
+We categorize detected misconfigurations by severity based on their potential impact on network operations:
+\begin{itemize}
+    \item \textit{High Severity}: Misconfigurations in this category pose critical risks to the network and require immediate action --- \sysname{} identified invalid subnet mask (\eg, 255.255.253.0) usages that violate binary boundary rules, which could lead to routing issues and network instability.
+    \item \textit{Low Severity}: These issues may not immediately disrupt network operations but should be addressed to ensure optimal functionality and avoid potential risks---
+    \sysname{} identified many instances of misnamed configurations (\eg, `smnpread' instead of `snmpread' for `snmp\_communities') and inclusion of insecure SSH KEX algorithm which (`diffie-hellman-group14-sha1'), do not break the system but could lead to confusion and maintenance challenges.
+    % \item \textit{Low Severity}: These issues present a potential risk but are not critical ---  \sysname{} identified the use of an insecure SSH KEX algorithm (`diffie-hellman-group14-sha1'), which, while outdated, still allows secure communications through stronger algorithms present in the configuration.
+    \item \textit{Ambiguous}: These misconfigurations are related to configurations that lead to undefined or nondeterministic behaviors --- \sysname{} found ambiguous rate limit values (`interval' and `burst' set to 0), which can cause unpredictable performance issues due to missing documentation on how these values should be handled, suggesting updates or further specifications in the documentation are needed.
+\end{itemize}
+
+Specifically, \sysname{} successfully identified 19 misconfigurations, including two cases of invalid subnet masks, 14 instances of inconsistent policy naming, one insecure SSH Key Exchange (KEX) algorithm, and two ambiguous rate limit values. Validated with domain experts, we find all misconfiguration cases are either valid or justifiable with a TPR of 100\% across all targeted misconfigurations.
+
+\paragraph{Non-Targeted Analysis (Campus B):}
+In contrast to the genuine misconfigurations identified in Campus A, all configurations flagged in the Campus B snapshot (Table~\ref{tab:grouped_misconfig_analysis}) were subsequently validated by network operators as \textbf{correct}. That is, all predictions made in this set constitute false positives. Representative cases include:
+
+\begin{itemize}
+\item \textit{Duplicate or overlapping DHCP helpers}, which were flagged by both models but were intentionally deployed for redundancy and failover.
+
+\item \textit{Missing VLANs in trunk links} and \textit{Uncoordinated channel-group assignments}, which appeared inconsistent when viewed in isolation but were confirmed to be benign due to compensatory downstream configurations and manual overrides.
+
+\item \textit{Unexpected PIM passive usage}, which aligned with localized multicast policies specific to the campus, albeit undocumented in standard configuration templates.
+\end{itemize}
+
+Interestingly, GPT-4o consistently classified all instances as misconfigurations, while DeepSeek-V3 exhibited more conservative behavior—labeling only a subset as problematic (e.g., 4 out of 8 DHCP helper cases, and 0 out of 9 missing VLAN instances). We now proceed to conduct a more detailed analysis of these false positives and inter-model discrepancies.
+
+% Overall, across both application scenarios (update verification and exhaustive configuration verification), \sysname{} consistently outperforms state-of-the-art tools like Batfish, Diffy, FFP, and partition-based GPT (Ciri), especially in detecting complex misconfigurations. \sysname{}'s dynamic context mining and iterative prompting allow it to capture interdependencies that other methods missed.
+
+\subsection{Analysis of False Positives and Model Discrepancies}
+\label{subsec:analysis}
+
+To understand how false positives arise within the CAIP framework, we conduct a detailed investigation of configuration lines that were incorrectly flagged as misconfigurations by either GPT-4o or DeepSeek, despite being confirmed as correct by human experts. Importantly, these misclassifications are not caused by label noise or inadequate context. In CAIP, the model itself explicitly selects what context it wants to see—including:
+
+\begin{itemize}
+    \item $N(P)$: neighboring lines in the configuration file,
+    \item $R(P)$: definitions or explanations directly linked to the configuration statement,
+    \item $N(R(P))$: definitions referenced by surrounding configuration lines, and
+    \item $S(P)$: other configuration lines with a similar structure or syntax elsewhere in the same file.
+\end{itemize}
+
+Once requested, CAIP faithfully provides the exact lines or definitions without transformation or interpretation. This separation ensures that downstream decisions—correct or incorrect—are entirely the result of the model’s own reasoning over the self-curated input context.
+
+\paragraph{Quantitative Comparison.}
+GPT-4o falsely flagged all 21 configuration lines in the Campus B dataset as misconfigurations. In contrast, DeepSeek correctly identified 17 of these lines as benign, producing only 4 false positives. This divergence highlights a fundamental difference in inference behavior between the models: GPT-4o is recall-oriented, erring on the side of caution by flagging even subtle or implied inconsistencies. DeepSeek, on the other hand, adopts a more conservative stance, surfacing misconfigurations only when deviations from established patterns are more pronounced or when potential functional impact is apparent.
+
+\paragraph{Context Request Patterns as Diagnostic Signal.}
+We analyzed the types of context each model requested to support its predictions. This serves as a window into each model’s internal reasoning strategy:
+
+\begin{itemize}
+    \item \textbf{GPT-4o} heavily favored $R(P)$ (requested in 71\% of cases), focusing on keyword-level definitions—such as protocol options, access control lists (ACLs), and helper addresses. It made fewer requests for neighboring lines ($N(P)$) or similar lines ($S(P)$), often assessing a configuration statement in isolation. This explains GPT-4o’s tendency to raise concerns when expected support structures were not explicitly visible in the retrieved definition, even when such structures were defined elsewhere or were optional.
+
+    \item \textbf{DeepSeek} distributed its requests more evenly: 40\% for $N(P)$, 40\% for $S(P)$, only 13\% for $R(P)$, and 7\% for $N(R(P))$. Instead of interpreting a single line in depth, DeepSeek looked at how the current line compared to nearby lines and peer configurations across the file. This behavior led to higher tolerance for configurations that reused common patterns or deviated slightly from canonical forms.
+\end{itemize}
+
+DeepSeek also demonstrated greater efficiency, using fewer tokens per prompt on average (147.9 vs. 180.2 for GPT-4o), while achieving higher prediction accuracy. This suggests that DeepSeek is more effective at extracting signal from minimal but contextually relevant data.
+
+\paragraph{Qualitative Patterns in False Positives.}
+Three common configuration motifs accounted for the majority of false positives. Below, we contrast the model behaviors on these patterns:
+
+\paragraph{1. \texttt{Shared ip helper-address Across VLANs}}  
+Many VLAN interfaces forwarded DHCP requests to the same centralized helper IP. GPT-4o flagged these as potential misconfigurations due to the absence of accompanying ACLs or forwarding rules in the retrieved $R(P)$. However, these rules were defined in other parts of the configuration or not required on that interface. DeepSeek reviewed similar use cases via $S(P)$ and saw consistent repetition of the helper address, correctly judging the setup as intentional.
+
+\paragraph{2. \texttt{VLAN Lists on Trunk Ports with Partial Overlap}}  
+Some interfaces allowed a subset of VLANs that were permitted elsewhere in the trunk group. GPT-4o flagged such cases due to missing VLAN IDs in its $R(P)$ view, interpreting them as misalignment. In contrast, DeepSeek leveraged $N(P)$ and $S(P)$ to confirm that partial overlap was common in this deployment and not indicative of configuration drift.
+
+\paragraph{3. \texttt{Presence of Less Common Commands in Valid Contexts}}  
+Lines like \texttt{ip pim passive} appeared suspicious to GPT-4o, which interpreted them as incomplete or unsupported, given its limited semantic grounding. DeepSeek took a more literal view—if the syntax was valid and no contradiction appeared in nearby or similar lines, it labeled them benign.
+
+\paragraph{Implications for Framework and Model Choice.}
+These observations highlight a key strength of CAIP: the framework strictly limits context to what the model explicitly requests. This ensures that false positives are not a result of hallucinated or poorly stitched context but stem directly from how the model interprets the information it asked for.
+
+By design, CAIP decouples \textit{context retrieval} from \textit{context reasoning}. As such, false alarms or overlooked issues can be traced back to model behavior—not to framework artifacts.
+
+The contrasting behaviors of GPT-4o and DeepSeek reflect two ends of a broader tradeoff:
+
+\begin{itemize}
+    \item \textbf{GPT-4o (High Recall, Low Precision):}
+    \begin{itemize}
+        \item Dominated by $R(P)$ requests, focusing on the semantics of the line being analyzed.
+        \item Strengths: Good at identifying subtle or undocumented edge cases.
+        \item Weaknesses: Flags many benign configurations; lacks robustness in the presence of design variability.
+    \end{itemize}
+
+    \item \textbf{DeepSeek (High Precision, Conservative Recall):}
+    \begin{itemize}
+        \item Emphasizes $N(P)$ and $S(P)$, assessing consistency across peer and nearby configurations.
+        \item Strengths: Matches real-world operator expectations and tolerates non-standard but correct setups.
+        \item Weaknesses: May miss subtle errors that do not produce visible drift or violate observable patterns.
+    \end{itemize}
+\end{itemize}
+
+Ultimately, the false positives observed in CAIP are not artifacts of random noise—they are deliberate reflections of each model’s interpretive strategy. CAIP’s explicit, LLM-driven interface provides a transparent foundation for diagnosing such decisions. The resulting analysis not only informs model selection but also deepens our understanding of how LLMs interpret and reason over structured configuration languages.

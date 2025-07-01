@@ -1,0 +1,39 @@
+\section{Overview}
+\label{sec:overview}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figs/caip_space.pdf}
+    \caption{\sysname{} system overview.}
+    \label{fig:overview}
+\end{figure*}
+
+
+To address the limitations of partition-based prompting,
+which often fails to capture dependencies across non-adjacent sections of configuration files,
+we design
+Context-Aware Iterative Prompting (\sysname{}), which has two components, as
+shown in Figure~\ref{fig:overview}: a context mining component and an
+iterative prompting component. These components work together to automate the
+process of context extraction and prompt interaction with LLMs, enabling more
+accurate router misconfiguration detection.
+
+
+\mypara{1. Context Mining Component:} In this phase, \sysname{} mines all \aaron{``all'' seems like an overclaim}
+relevant context for a given configuration line under examination. Relevance
+here refers to configurations that, while not necessarily directly related, \aaron{What does not ``not necessarily directly related'' mean?}
+provide important insights, such as neighboring configurations, similar lines
+applied in different contexts, or referenceable configurations that define key
+parameters.
+
+% This context mining is designed to be both efficient and precise, extracting only the most relevant data from the configuration file without flooding the system with unnecessary information.
+
+\mypara{2. Iterative Prompting Component:} Once the relevant context has been
+mined, the online component engages the LLM through an iterative prompting
+process. Instead of overwhelming the model with all the extracted context at
+once, \sysname{} interacts with the LLM in a guided, sequential manner.
+
+
+
+We now explain the challenges encountered in designing these two components and present the solutions.
+% that enable \sysname{} to perform effective context extraction and interactive prompting for misconfiguration detection.
