@@ -1,0 +1,120 @@
+\section{Motivation}
+\label{sec_motivation}
+\label{sec:motivation}
+
+\begin{wrapfigure}{r}{0.45\columnwidth}
+\footnotesize
+\begin{lstlisting}[basicstyle=\tiny, numbers=left, lineskip=0pt, frame=single, xleftmargin=2em, framexleftmargin=1.5em, numbersep=0.5em, basewidth=0.52em]
+interfaces {
+    ge-0/0/1 {
+        mtu 1500;
+        unit 0 {
+            family inet {
+                address 10.0.1.1/24;
+                filter { input EXAMPLE-FILTER; }
+...
+    ge-0/0/2 {
+        mtu 9000;
+        unit 0 {
+            family inet {
+                address 10.0.2.1/24;
+                filter { input EXAMPLE-FILTER; }
+...
+protocols {
+    bgp {
+        group EBGP-PEER {
+            type external;
+            peer-as 65002;
+            neighbor 10.0.2.2;
+...
+firewall {
+    family inet {
+        filter EXAMPLE-FILTER {
+            term ALLOW-INTERNAL {
+                from { source-address 10.0.0.0/16; }
+                then { accept; }
+            }
+...
+\end{lstlisting}
+\caption{Example device configuration in Junos OS}
+\label{fig:example_config}
+\end{wrapfigure}
+
+Ensuring network configurations are correct is a critical but notoriously difficult task. 
+Configurations possess a formal, nested structure---as shown in Figure~\ref{fig:example_config}---where settings are logically nested within specific blocks---\eg, an MTU is specified (line 3) within an interface stanza (lines 2-7). However, configurations are also woven together by a web of critical, non-hierarchical relationships where part of a device's configuration refers to another part of the configuration---\eg, an interface block references a packet filter (line 7) defined in a separate block (lines 25-29)---or another device's configuration---\eg, a BGP neighbor statement (line 21) references the address configured in another device's interface (not shown)~\cite{benson2009complexitymetrics, maltz2004routing}.
+%For example, Figure~\ref{fig:example_config} shows an example of a portion of a single device's configuration in Junos OS format.
+Furthermore, configurations are often immense---typically hundreds to thousands of lines per device~\cite{benson2011evolution, feamster2005detecting}---and differ syntactically and semantically between vendors~\cite{benson2009complexitymetrics, tang2021campion, ye2020hoyan}.
+% An effective verifier must therefore be able to understand not just the explicit, nested structure, but also these implicit, reference-based dependencies. \aaron{The preceding requirements for an effective verifiers emphasize configuration {\em structure}, but a proponent of model checkers would likely argue that {\em semantics} are important. One way to distinguish model checkers and consistency checkers is that the former focuses primarily on configuration semantics while the later focuses primarily on configuration structure. LLMs seem to strike a middle ground, considering both semantics and structure---although LLMs are really just learning patterns, which is a matter of structure and not semantics.} This complexity has led to various verification paradigms, each with distinct trade-offs.
+An effective verifier must therefore be able to reason about both the configuration's structure (its syntax and patterns) and its semantics (the resulting network behavior). This dual requirement has led to different verification paradigms, each with distinct trade-offs.
+
+Researchers and practitioners have developed two primary types of network configuration verifiers. {\em Model checkers}~\cite{fogel2015general, batfish} focus on semantics: they analyze logical models of network-wide forwarding behavior to detect violations of high-level objectives (\eg, reachability), but this requires significant manual effort to define and maintain the necessary formal policies~\cite{ye2020hoyan}. In contrast, {\em consistency checkers}~\cite{kakarla2024diffy, le2006minerals} focus on structure: they compare configurations against pre-defined or inferred patterns to flag deviations, but their lack of semantic understanding often leads them to flag valid, intentional customizations as errors.
+
+Large Language Models (LLMs) offer a promising way to bridge this gap. An LLM appears to handle both structure and semantics; however, its understanding of semantics is an emergent property learned from modeling the statistical patterns (\eg, the structure) of vast amounts of text. This unique position is why LLMs are a powerful new tool for this domain.
+
+
+\subsection{Why LLMs?}
+\label{sec:motivation:llms}
+
+Recent work has shown Large Language Models (LLMs) are a promising avenue for generating network configurations~\cite{wang2024netconfeval, bogdanov2024leveraging, mondal2023what, wang2023making, li2024preconfig} and analyzing system configurations~\cite{lian2023configuration, wang2024identifying}. LLMs' suitability for these tasks stems from: (1) LLMs' broad ``understanding'' of network configuration developed through extensive pretraining on vast datasets,
+%that include protocol specifications, vendor documentation, Q\&A forums, etc.; 
+and (2) LLMs' context-aware reasoning that combines user prompts (e.g., configuration snippets and questions) with pretrained knowledge to generate responses (e.g., assessments of configuration correctness).
+
+    
+\mypara{Broad knowledge of network configuration developed through pretraining:} 
+Transformer-based generative LLMs~\cite{vaswani2017attention,hill2024transformers,lin2022survey} 
+ develop a deep, contextual understanding of configurations during pretraining by processing extensive datasets that include protocol specifications, vendor documentation, Q\&A forum posts, etc.
+%documentation, specifications, and configurations from a variety of sources (e.g., vendors, standards bodies, Q\&A forums)
+\cite{qiu2020pre,achiam2023gpt,touvron2023llama,brown2020language}. 
+Structural hierarchies, semantic relationships, and statistical patterns in configurations are embedded within the model’s parameters using positional encodings---which characterize sequences of tokens (e.g., parts of configuration commands)---and multi-head self-attention mechanisms---which dynamically prioritize critical tokens (\eg, subnet addresses, permit/deny actions). For example, the model's parameters encode routing policy formats, relationships between routing policies and routing protocols, and routing policy best practices. In other words, the model is a probabilistic repository of knowledge akin to a human engineer's conceptual model of configurations.
+
+
+\mypara{Integrating prompts and pretrained knowledge for context-aware reasoning:}
+When a user provides configuration snippets and instructions in a prompt (\eg, ``evaluate this ACL for conflicts''), an LLM combines its pre-trained knowledge with the contextual information in the prompt. The self-attention mechanism enables the model to cross-reference tokens in the prompt with its stored knowledge, such as identifying a conflict between a firewall rule and routing policy based on probabilistic relationships learned during training. By estimating the likelihood of each token or sequence (\(p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1})\)), the model highlights deviations from high-probability patterns, flagging potential misconfigurations such as overlapping address ranges or misplaced \texttt{deny} directives. This integration mirrors how a human engineer draws on their knowledge and experience to evaluate configurations and apply abstract principles to specific cases.
+
+\mypara{Core LLM Capabilities for Structured Languages:}
+The suitability of LLMs for configuration tasks is analogous to their well-established success in code analysis and generation. Network configurations, much like programming code, are formal languages that possess three key properties LLMs are adept at learning: (1) a rigid syntax and grammatical structure; (2) a hierarchical organization of nested blocks and stanzas; and (3) critical long-range dependencies, where a definition in one area impacts behavior many lines away. The Transformer architecture is the primary reason for this effectiveness, as its core mechanisms are designed to model exactly these properties. Specifically, positional encodings allow the model to learn the strict sequential order and hierarchical structure inherent in the syntax, while the self-attention mechanism enables every token to directly attend to every other token, regardless of their distance. This allows the model to effectively capture the long-range dependencies common in both code and configurations, such as linking a policy's application to its distant definition.
+
+\mypara{Advantages over non-LLM-based network verifiers:} %LLMs' extensive pretraining and context-aware reasoning 
+The aforementioned features make LLMs easier to use and more widely applicable than network verifiers based on model checking or consistency checking. 
+
+Model checkers~\cite{fogel2015general, beckett2017general, abhashkumar2020tiramisu, prabhu2020plankton, zhang2022sre, steffen2020netdice, ye2020hoyan, ritchey2000using,al2011configchecker, jeffrey2009model, batfish}---which create and analyze logical models of network behavior to verify compliance with network requirements---heavily rely on the manual specification of algorithms and policies. These are hard to define correctly and completely~\cite{ye2020hoyan, birkner2021metha}, even with the assistance of other tools~\cite{birkner2020config2spec, kheradmand2020anime, sharma2023prosper}. 
+% In contrast, LLMs are fully automated, requiring no human-defined rules and dynamically adapting to new contexts. \aaron{Is it well known that LLMs can ``dynamically adapt to new contexts''? Do we need some citations to backup this claim?} 
+In contrast, LLMs require no human-defined rules for specific tasks, leveraging their ability for in-context learning~\cite{brown2020language} to adapt to the provided configuration. 
+This makes LLMs better suited for analyzing configurations involving vendor-specific nuances  or un(der)specified network requirements. 
+For example, an LLM trained on public documentation may correctly interpret a Juniper-specific `apply-groups' directive—a non-standard inheritance mechanism—that a generic, protocol-based model checker would miss, especially when the framework provides it with the concise, relevant context of the group being applied.
+One caveat is that LLMs' reliance on probabilistic reasoning prevents them from computing precise forwarding behaviors in some scenarios, so networks with well-specified or stringent requirements may choose to use model checkers in tandem with LLMs.
+
+
+
+
+
+Consistency checkers~\cite{kakarla2024diffy,kakarla2020finding, le2006minerals, feamster2005detecting, tang2021campion, le2008detecting, le2006characterization, batfish}---which analyze patterns in the configurations themselves---use simple existence checks and statistics-based heuristics to identify possible errors.
+All deviations from pre-defined or inferred patterns are treated as errors, even though they may be valid, context-specific customizations. 
+In contrast, LLMs integrate their pre-learned understanding of common practices with the specific configuration context provided in the prompt. By understanding the configuration as an interconnected system, an LLM can determine if a deviation in one part is a valid customization that is justified by a dependency in another. For example, a consistency checker might flag an interface with an MTU of 1500 as an anomaly if all other internal interfaces use an MTU of 9000. An LLM, however, when provided with context showing this interface connects to an external network, can use its broad knowledge to reason that 1500 is not a misconfiguration, but a necessary and correct setting for ensuring compatibility with the external peer.
+
+\subsection{Challenges of using LLMs for network verification}
+\label{sec:background:context}
+\label{sec:motivation:challenges}
+
+
+While LLMs' broad knowledge makes them a valuable asset
+for network verification, effectively leveraging this
+capability requires addressing the challenges posed by the complexity of network configurations~\cite{benson2009complexitymetrics, benson2011evolution, feamster2005detecting,maltz2004routing}.
+
+
+\mypara{Configurations are Large, Interconnected, and Context-Sensitive:}
+The primary challenge for LLM analysis is that network configurations are not just large, but also highly interconnected. A single file can be thousands of lines long, with critical dependencies spanning distant sections. Simply providing the entire file as input is often infeasible due to token limits and, more importantly, the performance degradation that occurs from context overload~\cite{levy2024same}. This has led to several intuitive but ultimately flawed approaches to providing context.
+
+
+One might first consider applying advanced prompting techniques like Chain-of-Thought (CoT) to improve reasoning. However, CoT is a reasoning strategy, not a context retrieval mechanism. It can only reason about the information already present in the prompt. If a critical policy definition is thousands of lines away and thus cannot be included in the context window, CoT is powerless to access it; its chain of thought will be based on incomplete information, leading to flawed analysis.
+
+
+
+A second approach, partition-based prompting~\cite{lian2023configuration}, directly addresses the token limit by breaking the configuration into smaller chunks. While this allows the model to process the entire file, it guarantees context fragmentation. For example, if a firewall rule in one partition conflicts with a routing policy in another, a model analyzing each partition in isolation would miss the cross-sectional conflict entirely. This method is also fundamentally incompatible with CoT, as it physically severs the long-distance contextual links that a step-by-step reasoning process requires.
+
+
+A third but similarly flawed approach is to analyze only configuration changes (diffs). While seemingly efficient, this method suffers from the same context fragmentation problem as partitioning. A change that adds a single line---such as applying a new firewall filter to an interface---is meaningless without the context of both the filter's definition and the other properties of that interface, all of which may be located far away from the change itself.
+
+
+
+Ultimately, these approaches fail because they cannot maintain a global, interconnected view of the configuration, which is precisely what a human expert relies on. An effective LLM-based detection tool must therefore emulate this expert behavior by intelligently gathering all context relevant to the specific configuration statement under review. This is crucial, for example, for understanding the principle of relative uniformity in network design. While configurations are complex, they are not random; engineers apply consistent templates for similar functions (\eg, all core-facing interfaces share a common set of policies). By mining for similar configurations the system can learn these implicit, network-specific design patterns on the fly. This allows the LLM to distinguish between a true, one-off anomaly that is likely a misconfiguration and an intentional deviation that is applied consistently across a class of devices. This core need to intelligently manage and provide crucial, non-local context—whether to resolve dependencies, learn design patterns, or understand local interactions—directly motivates our framework.

@@ -3,26 +3,8 @@
 
 \begin{abstract}
 
-Model checkers and consistency checkers detect critical errors in router
-    configurations, but these tools require significant manual effort to
-    develop and maintain. 
-    LLM-based Q\&A models have emerged as a promising 
-    alternative, allowing users to query partitions of configurations 
-    through prompts and receive answers based on learned 
-    patterns, thanks to transformer models pre-trained on 
-    vast datasets that provide generic configuration context for interpreting 
-    router configurations.
-    Yet, current methods of partition-based prompting often
-    do not provide enough network-specific context 
-    from the actual
-    configurations to enable accurate inference.
-    We introduce a Context-Aware Iterative Prompting (\sysname{}) framework that
-    automates network-specific context extraction and optimizes LLM prompts
-    for more precise router misconfiguration detection. \sysname{} addresses
-    three challenges: (1) efficiently mining relevant context from complex configuration files, (2) accurately distinguishing between
-    pre-defined and user-defined parameter values to prevent irrelevant
-    context from being introduced, and (3) managing prompt context overload with
-    iterative, guided interactions with the model.
-Our case studies demonstrate that \sysname{} enhances misconfiguration detection accuracy by over 30\% compared to partition-based LLMs and automated consistency checkers. It uncovers more than 20 previously undetected misconfigurations in real-world settings—without requiring manual policy specifications like model checkers.
+Verifying network configurations is critical for ensuring operational stability, but traditional tools force a trade-off between the high manual effort of model checkers and the semantic shallowness of consistency checkers. While Large Language Models (LLMs) are a promising alternative, naive approaches like full-file, partition-based, or chain-of-thought prompting fail to handle the large, interconnected nature of configuration files, leading to context overload or fragmentation.
+We introduce the Context-Aware Prompting (\sysname{}) framework, which enables an LLM to reason about network configurations like a human expert. \sysname{} first performs comprehensive context mining, identifying all potentially relevant neighboring, similar, and referenced (both intra- and cross-device) configurations. It then engages the LLM in a structured, interactive dialogue, where the model first requests the specific context it needs before performing its final, focused analysis. This on-demand approach provides the necessary context for deep reasoning while avoiding overload.
+Our evaluation on production network configurations demonstrates that \sysname{} achieves near-perfect accuracy on known misconfigurations and uncovers over 20 previously undetected, real-world errors. We show that \sysname{} significantly outperforms existing tools and that the choice of LLM backend reveals a crucial precision-recall trade-off. Ultimately, \sysname{} provides a more effective and scalable paradigm for LLM-based network verification.
 
 \end{abstract}

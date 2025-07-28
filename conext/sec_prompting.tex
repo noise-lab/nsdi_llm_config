@@ -1,48 +1,165 @@
-\section{Iterative Prompting}
+\section{Guided Interactive Prompting}
 \label{prompting_method}
 
 As we transition from context mining to utilizing the extracted information in LLM prompts, the next challenge is how to feed this information into the model without overwhelming it. While extracting accurate and relevant context is essential, the model's ability to process that information effectively is just as crucial.
 
-% A significant limitation of many LLM-based approaches is context overload, where the model is fed too much information at once, causing it to lose focus on the most pertinent details. This is especially relevant in network configurations, where dependencies and relationships between different configuration lines can be complex and spread throughout the file.
-
-
-
-
 \mypara{Solution:}
-To address these issues, \sysname{} implements an iterative, sequential prompting framework that allows the model to request and process relevant context in stages. Instead of overwhelming the model with all available context at once, \sysname{} enables the model to actively request additional information as needed. This approach enhances the model’s ability to maintain focus, coherence, and overall detection accuracy by allowing it to prioritize and process context more effectively, ensuring that only the most pertinent information is presented at each step.
+To address these issues, \sysname{} implements a guided interactive prompting framework that allows the model to request and process relevant context in stages. Instead of overwhelming the model with all available context at once, \sysname{} enables the model to actively request additional information as needed. This approach enhances the model’s ability to maintain focus, coherence, and overall detection accuracy by allowing it to prioritize and process context more effectively, ensuring that only the most pertinent information is presented at each step.
 
-\mysubpara{1. Initial Prompting:} The process begins by feeding the LLM the specific configuration line under review, along with targeted instructions about the type of misconfiguration we are checking for (\eg, syntax errors, dependency conflicts, or just general misconfiguration).
-% This prompt is concise, providing only the critical line and the request as shown in the example in 
-Figure~\ref{fig:initial_prompt} presents an example where the initial prompt
-includes MTU configuration line with an instruction to identify any
-syntax misconfigurations related to that configuration.
-This reduces the initial information load and allows the model to focus on the core issue.
-\aaron{Update this to reflect most recent prompting}
+\mysubpara{1. Initial Prompting:}
+The process begins not by asking for a misconfiguration analysis, but by first asking the LLM what information it needs to perform one. The initial prompt provides the LLM with only the specific configuration line under review and a menu of the available, pre-mined context categories (Neighboring, Similar, and Referenced). The LLM is instructed to respond with a JSON object specifying which, if any, of these context types it requires to make an informed decision. This first step also delegates the task of differentiating between pre-defined and user-defined values to the LLM, as discussed in the previous section. Figure~\ref{fig:step1_initial_prompt} shows an example of this initial query for an MTU configuration line.
 
-    \begin{figure}[tb]
+
+\begin{figure}[t]
     \centering
-    \fbox{\includegraphics[width=0.95\columnwidth]{figs/initial_prompt_response.png}}
-    \caption{Example: initial prompting and LLM context request response for detecting syntax misconfiguration.}
-    \label{fig:initial_prompt}
+    \begin{mdframed}
+    \mysubpara{Step 1: Initial Prompting}
+    \begin{lstlisting}[ basicstyle=\tiny\ttfamily, breaklines=true,     postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}]
+I have a line of network route configuration for a Junipter router and need to determine if there is any misconfiguration:
+Configuration Line Under Review: groups-->INTERFACE-BACKBONE-->interfac
+es--><xe-*>-->mtu=True
+Given this information, please now proceed to analyze the provided configuration to identify any potential misconfigurations. Do not hallucinate if no misconfiguration is occurring.
+Additional contextual information with respect to the configuration line under review can be provided upon request if useful for identifying SYNTAX misconfigurations, include (1) Neighboring Configuration Lines; (2) Configuration Lines with Similar Pattern and Nature; (3) Referenceable Configuration Lines at both intra and cross-device Level; (4) Referenceable Configuration Lines for Neighboring Configuration Line. Additionally, you must classify the terminal value in the line under review ('True') as either a pre-defined keyword that is part of the configuration language or a custom, user-defined identifier.
+
+Respond in a json format strictly adhering to the following and do not provide any other output:
+If no further contextual information is needed:
+{
+    "Misconfigured": boolean, // true if there is any misconfiguration
+    "Parameter": [], // List of misconfigured parameters
+    "reason": [] // List of misconfiguration explanations
+}
+If further contextual information is needed:
+{
+  "requestedInfo": [], // An array of integers from the menu above.
+			Leave empty if no context is needed.
+  "reason": // Explanation of why the requested context is necessary.,
+  "isUserDefined": boolean, // 'false' if 'True' is a pre-defined keyword,
+			'true' if it is a custom identifier.
+  "classificationReason": // A brief explanation for your classification.
+}
+    \end{lstlisting}
+    \end{mdframed}
+    \caption{The initial dialogue step where the framework solicits context requirements from the LLM.}
+    \label{fig:step1_initial_prompt}
 \end{figure}
 
-\mysubpara{2. Contextual Options:} Next, \sysname{} offers the model the option to request additional context based on its understanding of the configuration line and the misconfiguration detection request. These options are based on our categorized context types, including: neighboring (\( N(P) \)), similar (\(S(P) \)) , and referenceable contexts (\( R(P) \)), as well as referenceable contexts on neighboring configurations (\( N(R(P)) \)) \aaron{Formalism seems inverted from description}. By allowing the model to choose which context to receive, \sysname{} ensures that the LLM is only given information that is most relevant to the detection task at hand, reducing the risk of context overload. Figure~\ref{fig:initial_prompt} illustrates an example request response
+
+
+%     \begin{figure}[tb]
+%     \centering
+%     \fbox{\includegraphics[width=0.95\columnwidth]{figs/initial_prompt_response.png}}
+%     \caption{Example: initial prompting and LLM context request response for detecting syntax misconfiguration.}
+%     \label{fig:initial_prompt}
+% \end{figure}
+
+
+
+\mysubpara{2. Contextual Options:} Next, \sysname{} offers the model the option to request additional context based on its understanding of the configuration line and the misconfiguration detection request. These options are based on our categorized context types, including: neighboring (\( N(P) \)), similar (\(S(P) \)) , and referenceable contexts (\( R(P) \)), as well as referenceable contexts on neighboring configurations (\( R(N(P)) \)). By allowing the model to choose which context to receive, \sysname{} ensures that the LLM is only given information that is most relevant to the detection task at hand, reducing the risk of context overload. Figure~\ref{fig:step2_llm_request} illustrates an example request response
 where the LLM requests neighboring context and referenceable contexts on neighboring configurations after the initial prompt to aid analyzing the MTU setting.
-    
-\mysubpara{3. Iterative Refinement:} After the model processes the initial prompt, it can request additional information if needed before arriving at the final decision. \aaron{How often is additional (i.e., a second round of) context requested?} \sysname{} engages in a feedback loop where the model’s output informs the next set of prompts. For instance, if the model identifies a possible syntax issue but requires more context from a related policy definition, \ie, similar context, \sysname{} can deliver that specific context in the next prompt. This iterative process continues until the model has sufficient information to make a well-informed decision. Figure~\ref{fig:feedback_and_response} provides an example of what a final misconfiguration decision looks like regarding a misconfiguared MTU value.
-    \begin{figure}[tb]
+
+
+
+\begin{figure}[t]
     \centering
-    \fbox{\includegraphics[width=0.95\columnwidth]{figs/feedback_and_response.png}}
-    \caption{Example: Adding requested context and retrieving misconfiguration detection result.}
-    \label{fig:feedback_and_response}
+    \begin{mdframed}
+    \mysubpara{Step 2: Example LLM Response for Context Request}
+    \begin{lstlisting}[basicstyle=\tiny\ttfamily, breaklines=true, postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}]
+{
+    "requestedInfo": [1, 2],
+    "reason": ["Neighboring configuration lines are necessary to confirm the syntax structure in context.", "Configuration lines with a similar pattern and nature are needed to ensure consistent parameter usage."],
+    "isUserDefined": false,
+    "classificationReason": "The value 'True' is a standard boolean keyword in many configuration and programming languages, not a custom, user-defined identifier."
+}
+    \end{lstlisting}
+    \end{mdframed}
+    \caption{The LLM's response, specifying the exact context it requires for its analysis and providing determination for whether the parameter value is user-defined.}
+    \label{fig:step2_llm_request}
+\end{figure}
+
+
+\mysubpara{3. Prompt Context Refinement:} After the model processes the initial prompt, it can request additional information if needed before arriving at the final decision --- We find that a single, well-informed round of context provision is highly effective, and we did not observe cases where the model needed a second round of additional context. \sysname{} engages in a feedback loop where the model’s output informs the next set of prompts. For instance, if the model identifies a possible syntax issue but requires more context from a related policy definition, \ie, similar context, \sysname{} can deliver that specific context in the next prompt, as shown in Figure~\ref{fig:step3_context_provision}. This interactive process continues until the model has sufficient information to make a well-informed decision. Figure~\ref{fig:step4_final_analysis} provides an example of what a final misconfiguration decision looks like regarding a misconfiguared MTU value.
+%     \begin{figure}[tb]
+%     \centering
+%     \fbox{\includegraphics[width=0.95\columnwidth]{figs/feedback_and_response.png}}
+%     \caption{Example: Adding requested context and retrieving misconfiguration detection result.}
+%     \label{fig:feedback_and_response}
+% \end{figure}
+
+
+
+
+% \begin{figure*}[tb]
+%     \centering
+%     \begin{subfigure}[t]{0.48\textwidth}
+%         \centering
+%         \fbox{\includegraphics[width=0.95\textwidth]{figs/initial_prompt_response.png}}
+%         \caption{Initial prompting and LLM context request response for detecting syntax misconfiguration.}
+%         \label{fig:initial_prompt}
+%     \end{subfigure}
+%         \hfill
+%         \begin{subfigure}[t]{0.48\textwidth}
+%         \centering
+%         \fbox{\includegraphics[width=0.95\textwidth]{figs/feedback_and_response.png}}
+%         \caption{Adding requested context and retrieving misconfiguration detection result.}
+%         \label{fig:feedback_and_response}
+%     \end{subfigure}
+%     \caption{Examples of \sysname{}'s guided interactive prompting.}
+%     \label{fig:side_by_side_examples}
+% \end{figure*}
+
+
+
+\begin{figure}[t]
+    \centering
+    \begin{mdframed}
+    \mysubpara{Step 3: Framework Provides Requested Context}
+    \begin{lstlisting}[basicstyle=\tiny\ttfamily, breaklines=true,postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}]
+Neighboring Configuration Lines:
+ - groups-->INTERFACE-BACKBONE-->interfaces--><xe-*>-->unit <*>
+    - family inet-->filter-->input-list-->1=backbone-in
+    - family inet-->filter-->input-list-->0=uplink-in
+    - family inet-->filter-->output=interface-out
+    - family iso-->mtu=1497
+    - family mpls-->filter-->input=mpls-sample
+    - family inet6-->filter-->output=v6filter
+    - family inet6-->mtu=9174
+    - family inet6-->filter-->input-list-->0=inet6-sample
+    - family inet6-->filter-->input-list-->1=v6filter
+    - family mpls-->mtu=9174
+    - family inet-->mtu=9174
+
+Similar Configuration Lines:
+ - groups
+    - INTERFACE-BACKBONE-->interfaces--><ae*>-->unit <*>-->family iso--> mtu=1497 (Further definition DO NOT EXIST for the value [1497] assigned to the parameter [mtu] in the rest of the configuration.)
+    - INTERFACE-CONNECTOR-->interfaces--><ae*>-->mtu=9192 (Further definition DO NOT EXIST for the value [9192] assigned to the parameter [mtu] in the rest of the configuration.)
+    \end{lstlisting}
+    \end{mdframed}
+    \caption{The second prompt from the framework, which includes the context the LLM requested.}
+    \label{fig:step3_context_provision}
 \end{figure}
 
 
 This sequential, interactive approach mirrors how a network administrator might manually review a configuration file—examining the most relevant sections first, then digging deeper into referenceable or adjacent configurations as needed.
 
-% It ensures that the model focuses on the most critical aspects of the configuration without becoming overwhelmed by extraneous information.
 
-\mypara{Why Iterative, Requested Based Prompting Works:}
+\begin{figure}[t]
+    \centering
+    \begin{mdframed}
+    \mysubpara{Step 4: Final LLM Response with Analysis}
+    \begin{lstlisting}[basicstyle=\small\tiny\ttfamily, breaklines=true,postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}]
+{
+    "Misconfigured": true,
+    "Parameter": ["mtu"],
+    "reason": ["The value 'True' assigned to the parameter 'mtu' is not valid. The 'mtu' parameter typically requires a numeric value representing the maximum transmission unit size."]
+}
+    \end{lstlisting}
+    \end{mdframed}
+    \caption{The LLM's final, context-aware analysis, delivered after receiving the necessary information.}
+    \label{fig:step4_final_analysis}
+\end{figure}
+
+
+\mypara{Why Requested Based Prompting Works:}
 By breaking down the context into smaller, more digestible portions, \sysname{} addresses the fundamental challenges of context overload. This method significantly enhances the model’s ability to:
 \begin{enumerate}
     \item Stay on target: With less irrelevant information, the model can maintain focus on the specific issue under review.
@@ -50,6 +167,5 @@ By breaking down the context into smaller, more digestible portions, \sysname{} 
     \item Optimize performance: Avoiding context overload reduces the processing burden on the model, leading to faster and more reliable outputs.
 \end{enumerate}
 
-For example, in detecting misconfigurations in a multi-layer firewall policy, \sysname{} might first present the core rule in question, then iteratively offer neighboring rules that affect the same traffic flow, followed by referenceable configuration sections that define broader network policies. This structured process ensures that the LLM has all the information it needs, without drowning in unnecessary details, enabling it to make accurate decisions. Unlike conventional prompt-chaining, which provides incremental instructions based on a fixed context, \sysname{} dynamically adds context as requested by the LLM, focusing on the evolving needs of the analysis.
+For example, in detecting misconfigurations in a multi-layer firewall policy, \sysname{} might first present the core rule in question, then offer neighboring rules that affect the same traffic flow, followed by referenceable configuration sections that define broader network policies. This structured process ensures that the LLM has all the information it needs, without drowning in unnecessary details, enabling it to make accurate decisions. Unlike conventional prompt-chaining, which provides incremental instructions based on a fixed context, \sysname{} dynamically adds context as requested by the LLM, focusing on the evolving needs of the analysis.
 
-% By combining efficient context extraction with iterative, focused interaction, \sysname{} represents a significant advancement in leveraging LLMs for router misconfiguration detection, ensuring that models are both effective and computationally efficient.

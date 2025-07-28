@@ -167,7 +167,7 @@
 }
 
 @article{wang2024netconfeval,
-  title={NetConfEval: Can LLMs Facilitate Network Configuration?},
+  title={{NetConfEval}: Can {LLMs} Facilitate Network Configuration?},
   author={Wang, Changjie and Scazzariello, Mariano and Farshin, Alireza and Ferlin, Simone and Kosti{\'c}, Dejan and Chiesa, Marco},
   journal={Proceedings of the ACM on Networking},
   volume={2},
@@ -191,6 +191,7 @@
   pages={674--688},
   year={2024}
 }
+
 @article{wang2024identifying,
   title={Identifying Performance-Sensitive Configurations in Software Systems through Code Analysis with LLM Agents},
   author={Wang, Zehao and Kim, Dong Jae and Chen, Tse-Hsun},
@@ -198,17 +199,18 @@
   year={2024}
 }
 
-
-@article{liu2024large,
-  title={Large Language Models for Networking: Workflow, Advances and Challenges},
+@ARTICLE{liu2024large,
   author={Liu, Chang and Xie, Xiaohui and Zhang, Xinggong and Cui, Yong},
-  journal={arXiv preprint arXiv:2404.12901},
-  year={2024}
+  journal={IEEE Network}, 
+  title={Large Language Models for Networking: Workflow, Advances and Challenges}, 
+  year={2024},
+  doi={10.1109/MNET.2024.3510936}
 }
+
 
 # base literature about LLM and GPT models and their training/reasoning
 @article{achiam2023gpt,
-  title={Gpt-4 technical report},
+  title={{GPT-4} technical report},
   author={Achiam, Josh and Adler, Steven and Agarwal, Sandhini and Ahmad, Lama and Akkaya, Ilge and Aleman, Florencia Leoni and Almeida, Diogo and Altenschmidt, Janko and Altman, Sam and Anadkat, Shyamal and others},
   journal={arXiv preprint arXiv:2303.08774},
   year={2023}
@@ -554,16 +556,6 @@ year = {2021},
     year = {2012},
 }
 
-
-
-@misc{openai_gpt4o,
-  author       = {OpenAI},
-  title        = {Hello GPT-4o},
-  year         = {2024},
-  howpublished = {\url{https://openai.com/index/hello-gpt-4o/}},
-  note         = {Accessed: 2024-09-17}
-}
-
 @inproceedings{tian2019jinjing,
     author = {Bingchuan Tian and Xinyi Zhang and Ennan Zhai and Hongqiang 
         Harry Liu and Qiaobo Ye and Chunsheng Wang and Xin Wu and Zhiming Ji 
@@ -599,7 +591,7 @@ booktitle = {Proceedings of the 22nd ACM Internet Measurement Conference ({IMC})
 
 @inproceedings{abhashkumar2020aed,
 author = {Abhashkumar, Anubhavnidhi and Gember-Jacobson, Aaron and Akella, Aditya},
-title = {AED: incrementally synthesizing policy-compliant and manageable configurations},
+title = {{AED}: incrementally synthesizing policy-compliant and manageable configurations},
 year = {2020},
 booktitle = {Proceedings of the 16th International Conference on Emerging Networking EXperiments and Technologies ({CoNEXT})},
 }
@@ -638,14 +630,6 @@ booktitle = {Proceedings of the 22nd ACM Workshop on Hot Topics in Networks ({Ho
   year={2024}
 }
 
-@misc{openai2023gpt4,
-  title={GPT-4 Technical Report},
-  author={OpenAI},
-  year={2023},
-  url={https://openai.com/research/gpt-4},
-  note={Accessed: Jan 2025}
-}
-
 @misc{openai2022gpt35,
   title={Introducing ChatGPT and GPT-3.5},
   author={OpenAI},
@@ -668,4 +652,67 @@ booktitle = {Proceedings of the 22nd ACM Workshop on Hot Topics in Networks ({Ho
   year={2023},
   url={https://mistral.ai/news/mixtral-of-experts/},
   note={Accessed: Jan 2025}
+}
+
+@inproceedings{turner2010california,
+    author = {Daniel Turner and Kirill Levchenko and Alex C. Snoeren and Stefan 
+        Savage},
+    title = {California fault lines: understanding the causes and impact of 
+        network failures},
+    booktitle = {{SIGCOMM}},
+    year      = {2010},
+}
+
+@inproceedings{gill2011understanding,
+    author = {Phillipa Gill and Navendu Jain and Nachiappan Nagappan},
+    title = {Understanding network failures in data centers: measurement, 
+        analysis, and implications},
+    booktitle = {{SIGCOMM}},
+    year = {2011},
+}
+
+@inproceedings{mondal2023what,
+author = {Mondal, Rajdeep and Tang, Alan and Beckett, Ryan and Millstein, Todd and Varghese, George},
+title = {What do LLMs need to Synthesize Correct Router Configurations?},
+year = {2023},
+doi = {10.1145/3626111.3628194},
+booktitle = {Proceedings of the 22nd ACM Workshop on Hot Topics in Networks ({HotNets})},
+pages = {189–195}
+}
+
+@misc{wang2023making,
+      title={Making Network Configuration Human Friendly}, 
+      author={Changjie Wang and Mariano Scazzariello and Alireza Farshin and Dejan Kostic and Marco Chiesa},
+      year={2023},
+      eprint={2309.06342},
+      archivePrefix={arXiv},
+      primaryClass={cs.NI},
+      url={https://arxiv.org/abs/2309.06342}, 
+}
+
+@misc{li2024preconfig,
+      title={PreConfig: A Pretrained Model for Automating Network Configuration}, 
+      author={Fuliang Li and Haozhi Lang and Jiajie Zhang and Jiaxing Shen and Xingwei Wang},
+      year={2024},
+      eprint={2403.09369},
+      archivePrefix={arXiv},
+      primaryClass={cs.NI},
+      url={https://arxiv.org/abs/2403.09369}, 
+}
+
+@inproceedings{benson2011evolution,
+    author = {Hyojoon Kim and Theophilus Benson and Aditya Akella and Nick 
+        Feamster},
+    title = {The evolution of network configuration: a tale of two campuses},
+    booktitle = {Proceedings of the 11th {ACM} {SIGCOMM} Internet Measurement 
+        Conference ({IMC})},
+    year = {2011},
+}
+
+@inproceedings{gember-jacobson2015mpa,
+author = {Gember-Jacobson, Aaron and Wu, Wenfei and Li, Xiujun and Akella, Aditya and Mahajan, Ratul},
+title = {Management Plane Analytics},
+year = {2015},
+booktitle = {Proceedings of the 2015 Internet Measurement Conference ({IMC})},
+pages = {395–408},
 }

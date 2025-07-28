@@ -44,7 +44,7 @@
 % differ from general norms.
 
 %More recently, Large Language Models (LLMs) ~\cite{bogdanov2024leveraging, chen2024automatic, wang2024identifying} have recently explored as a promising alternative. 
-Recent work has shown Large Language Models (LLMs)~\cite{deepseekai2024deepseekv3technicalreport, openai_gpt4o} are a promising avenue for network misconfiguration detection~\cite{bogdanov2024leveraging, chen2024automatic, wang2024identifying, lian2023configuration}.
+Recent work has shown Large Language Models (LLMs)~\cite{deepseekai2024deepseekv3technicalreport, achiam2023gpt} are a promising avenue for network misconfiguration detection~\cite{bogdanov2024leveraging, chen2024automatic, wang2024identifying, lian2023configuration}.
 Pretrained on vast network-related datasets, LLMs combine semantic understanding with flexibility, enabling them to reason about both local and global dependencies in configurations.
 In contrast to model checkers~\cite{fogel2015general, beckett2017general, abhashkumar2020tiramisu, prabhu2020plankton, zhang2022sre, steffen2020netdice, ye2020hoyan, ritchey2000using,al2011configchecker, jeffrey2009model, batfish}, LLMs do not require explicit enumeration of control plane semantics and target forwarding policies, and, unlike consistency checkers~\cite{kakarla2024diffy,kakarla2020finding, le2006minerals, feamster2005detecting, tang2021campion, le2008detecting, le2006characterization, batfish}, LLMs can adapt to diverse network contexts to detect nuanced misconfigurations. 
 %A notable example is Ciri~\cite{lian2023configuration}, an LLM-based configuration verifier that illustrates the potential for scalable \aaron{If we are going to mention scalability, then we should discuss and evaluate how \sysname{} scales.} and accurate automated detection.
@@ -71,62 +71,62 @@ In this section, we discuss how LLMs encode and apply domain knowledge, as well 
 
 \subsection{How LLMs Encode and Apply Domain Knowledge}
 
-\mypara{Encoding Network Expertise:} Transformer-based generative LLMs~\cite{vaswani2017attention,hill2024transformers,lin2022survey} encode domain knowledge during pretraining by processing extensive datasets of network documentation, configuration files, and protocol specifications~\cite{qiu2020pre,achiam2023gpt,touvron2023llama,brown2020language}. 
-Structural hierarchies, semantic relationships, and statistical patterns are embedded within the model’s parameters using multi-head self-attention mechanisms---which dynamically assign importance to critical tokens such as addresses and actions (permit/deny)---and positional encodings---which preserve the sequence of commands. For example, the model's parameters encode routing policy formats, relationships between routing policies and routing protocols, and routing policy best practices. In other words, the model is a probabilistic repository of domain-specific expertise---akin to a domain expert's internalized understanding---that is general enough to reason about diverse configurations.
+\mypara{Encoding Network Expertise:} Transformer-based generative LLMs~\cite{vaswani2017attention,hill2024transformers,lin2022survey} encode domain knowledge during training by processing extensive datasets of network documentation, specifications, and configurations~\cite{qiu2020pre,achiam2023gpt,touvron2023llama,brown2020language}. 
+Structural hierarchies, semantic relationships, and statistical patterns are embedded within the model’s parameters using multi-head self-attention mechanisms---which dynamically prioritize critical tokens (\eg, subnet addresses, permit/deny actions)---and positional encodings---which preserve the sequence of commands. For example, the model's parameters encode routing policy formats, relationships between routing policies and routing protocols, and routing policy best practices. In other words, the model is a probabilistic repository of domain-specific knowledge akin to a domain expert's conceptual model.
+%understanding---that is general enough to reason about diverse configurations.
 
 
 %Through this process, the models learn statistical patterns, structural hierarchies, and semantic relationships crucial to network operations. For example, they identify how ACL rules typically interact with routing policies or how specific firewall configurations align with best practices. This knowledge is embedded within the model’s parameters, which are refined using gradient descent to minimize prediction errors, effectively transforming the model into a probabilistic repository of domain-specific expertise. Technically, transformers achieve this by employing multi-head self-attention mechanisms, which dynamically assign importance to critical tokens such as protocol keywords or IP ranges, and positional encodings, which preserve the sequence of commands. These mechanisms allow the model to capture both surface-level syntax (\eg, ACL formats) and deeper semantic relationships (\eg, precedence of routing policies over firewall rules). The resulting parameterized knowledge acts like a domain expert’s internalized understanding, enabling the model to generalize its expertise to new configurations it encounters.
 
-\mypara{How LLMs Integrate Prompts and Pretrained Knowledge for Context-Aware Reasoning:} When a user provides configuration snippets and instructions in a prompt (\eg, “Evaluate this ACL for conflicts”), the LLM combines its pre-trained knowledge with the contextual information in the prompt. The self-attention mechanism enables the model to cross-reference tokens in the prompt with its stored knowledge, such as identifying a conflict between a firewall rule and routing policy based on probabilistic relationships learned during pretraining. By estimating the likelihood of each token or sequence (\(p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1})\)), the model highlights deviations from high-probability patterns, flagging potential misconfigurations such as overlapping address ranges or misplaced \texttt{deny} directives. This integration mirrors how a human domain expert draws on their knowledge and experience to evaluate new configurations and apply abstract principles to specific cases.
+\mypara{How LLMs Integrate Prompts and Pretrained Knowledge for Context-Aware Reasoning:} When a user provides configuration snippets and instructions in a prompt (\eg, “Evaluate this ACL for conflicts”), the LLM combines its pre-trained knowledge with the contextual information in the prompt. The self-attention mechanism enables the model to cross-reference tokens in the prompt with its stored knowledge, such as identifying a conflict between a firewall rule and routing policy based on probabilistic relationships learned during training. By estimating the likelihood of each token or sequence (\(p(\text{token}_i \mid \text{token}_1, \ldots, \text{token}_{i-1})\)), the model highlights deviations from high-probability patterns, flagging potential misconfigurations such as overlapping address ranges or misplaced \texttt{deny} directives. This integration mirrors how a human engineer draws on their knowledge and experience to evaluate configurations and apply abstract principles to specific cases.
 
-\aaron{Still need to update remainder of background and motivation $\downarrow$}
+\subsection{Comparison with Non-LLM-based Network Configuration Verifiers}
 
+The aforementioned architecture/abilities/characteristics allows LLMs to overcome/sidestep/avoid the ease-of-use and semantic-awareness issues of network configuration model checkers and consistency checkers, respectively.
 
-\subsection{Comparison with Non-LLM-based Misconfiguration Detectors}
+\mypara{Model checkers}~\cite{fogel2015general, beckett2017general, abhashkumar2020tiramisu, prabhu2020plankton, zhang2022sre, steffen2020netdice, ye2020hoyan, ritchey2000using,al2011configchecker, jeffrey2009model, batfish} create and analyze logical models of network behavior to verify compliance with network requirements. They rely heavily on the manual specification of algorithms and policies, which are hard to define correctly and completely~\cite{ye2020hoyan, birkner2021metha}, even with the assistance of other tools~\cite{birkner2020config2spec, kheradmand2020anime, sharma2023prosper}. In contrast, LLMs are fully automated, requiring no human-defined rules and dynamically adapting to new contexts. This makes LLMs better suited for analyzing configurations involving vendor-specific nuances \aaron{Are LLMs also likely to miss these nuances?} or un(der)specified network requirements. For example, \aaron{TODO}. Note that LLMs' reliance on probabilistic reasoning prevents them from computing precise forwarding behaviors in some scenarios, so networks with well-specified or stringent requirements may choose to use model checkers in tandem with LLMs.
 
-\aaron{Idea: talk about the limits of model checkers, consistency checkers, and LLM-based checkers}
+\mypara{Consistency checkers}~\cite{kakarla2024diffy,kakarla2020finding, le2006minerals, feamster2005detecting, tang2021campion, le2008detecting, le2006characterization, batfish} use statistics-based analyses to identify frequently occurring patterns in a network's  configurations. Common patterns are assumed to be correct and all deviations are treated as errors, regardless of whether they represent valid, context-specific configurations. In other words, consistency checkers fail to account for the underlying intent of the configuration or the broader network context, which can lead to more false positives. In contrast, LLMs integrate their pre-learned understanding of common (best) practices with the specific configuration context provided in the prompt. By treating configurations as interconnected systems, LLMs can assess whether deviations align with learned standards or represent genuine misconfigurations.  \aaron{I'm not sure what "treating configurations as interconnected systems" has to do with "assessing whether deviations align with learned standards".} For instance, while a consistency checker might flag a rare ACL rule as an anomaly, an LLM can reason that it is valid based on its relationships to routing policies or protocol directives elsewhere in the configuration.
 
-As discussed in Section~\ref{sec:intro}, two categories of non-LLM-based misconfiguration detectors have been developed and deployed: {\em consistency checkers} and {\em model checkers}. Tools in both categories can be highly effective, but have notable limitations that can be avoided with an LLM-based approach for detecting network misconfigurations.
-
-%Many automated tools have been developed to combat misconfigurations on routers and switches.
-%To efficiently combat misconfigurations on routers and switches, many automated tools 
-%such as model checkers and consistency checkers 
-%have been developed. 
-%Model checkers, such as Batfish~\cite{fogel2015general, batfish}, Minesweeper~\cite{beckett2017general}, and Tiramisu~\cite{abhashkumar2020tiramisu}, create logical models of network behavior to verify compliance with predefined policies. However, their reliance on manually specified algorithms and policies limits scalability \aaron{Researchers have put significant effort into scaling model checkers, and state-of-the-art tools scale reasonably well to large/complex networks. Is the scalability limitation here about the scalability of human effort, as opposed to the scalability of the tools themselves?} and adaptability~\cite{ye2020hoyan, birkner2021metha}. Consistency checkers, such as Batfish~\cite{batfish},\footnote{Batfish~\cite{batfish} can function as a model checker or a consistency checker, depending on which capabilities are invoked.} Diffy~\cite{kakarla2024diffy}, and Minerals~\cite{le2006minerals}, identify deviations from learned patterns or best practices, offering a more automated approach. However, these tools often oversimplify configurations, flagging valid variations as errors \aaron{Need statistic/citation to backup this claim.} and leading to false positives. 
-
-
-\mypara{Consistency checkers}~\cite{kakarla2024diffy,kakarla2020finding, le2006minerals, feamster2005detecting, tang2021campion, le2008detecting, le2006characterization, batfish}
-%, such as Batfish~\cite{batfish},\footnote{Batfish~\cite{batfish} can function as a model checker or a consistency checker, depending on which capabilities are invoked.} Diffy~\cite{kakarla2024diffy}, and Minerals~\cite{le2006minerals}, 
-%identify deviations from common patterns.
-%\mysubpara{Advantages Over Non-LLM-Based Tools:} The unique architecture of transformer-based LLMs allows them to fundamentally surpass consistency checkers by integrating pre-trained domain knowledge with context-specific information from the configuration being analyzed, creating a much richer decision-making framework. 
-%They rely solely on 
-use statistics-based analyses to identify frequently occurring patterns in a network's  configurations;
-%, and sometimes hard-coded ``best practices.'' 
-%Consistency checkers rely solely on statistical patterns derived from historical or similar data, using majority-voting logic to flag deviations as anomalies. 
-common patterns are assumed to be correct and all deviations are treated as errors, regardless of whether they represent valid, context-specific configurations. As a result, consistency checkers fail to account for the underlying intent of the configuration or the broader network context, often leading to false positives and missed opportunities to understand nuanced misconfigurations.
-
-In contrast, LLMs integrate their pre-learned understanding of common (best) practices with the specific configuration context provided in the prompt. By treating configurations as interconnected systems, they can assess whether deviations align with learned standards or represent genuine misconfigurations. For instance, while a consistency checker might flag a rare ACL rule as an anomaly, an LLM can reason that it is valid based on its relationships to routing policies or protocol directives elsewhere in the configuration.
-
-
-\mypara{Model checkers}
-\aaron{Integrate two paragraphs below}
-Model checkers, such as Batfish~\cite{fogel2015general, batfish}, Minesweeper~\cite{beckett2017general}, and Tiramisu~\cite{abhashkumar2020tiramisu}, create logical models of network behavior to verify compliance with predefined policies. However, their reliance on manually specified algorithms and policies limits scalability \aaron{Researchers have put significant effort into scaling model checkers, and state-of-the-art tools scale reasonably well to large/complex networks. Is the scalability limitation here about the scalability of human effort, as opposed to the scalability of the tools themselves?} and adaptability~\cite{ye2020hoyan, birkner2021metha}.
-
-
-Compared to model checkers, LLMs are fully automated, requiring no human-defined rules and dynamically adapting to new contexts, making them better suited for handling configurations involving vendor-specific nuances or unforeseen patterns. In contrast, model checkers simulate network behavior and verify compliance with predefined policies but rely heavily on the manual specification of rules, algorithms, and policies, which limits their scalability due to dependence on domain expertise. However, LLMs have certain limitations when compared to model checkers, particularly in their inability to rigorously simulate and compute precise route behaviors under specific scenarios, such as link failures or traffic balancing. While model checkers can mathematically verify properties like load balancing, LLMs rely on probabilistic reasoning and can only infer whether a configuration aligns with best practices or observed patterns. Thus, while LLMs excel in automation and contextual reasoning, they lack the exact computational guarantees offered by model checkers. The focus of this paper, however, is not to address the mathematical computational limitations of LLMs but to optimize existing LLMs for effective and scalable misconfiguration detection.
-
-Of course, LLM-based misconfiguration detection is not a panacea. Using LLMs requires addressing different challenges, which we discuss next, and introduces different limitations, which we discuss in Section \aaron{TODO}.
+%\aaron{Idea: talk about the limits of model checkers, consistency checkers, and LLM-based checkers}
+%
+%Through this architecture and the pre-learned general network configuration knowledge, LLM-based Q\&A models can detect subtle errors that can emerge from interactions among different elements—issues frequently missed by conventional tools \aaron{consistency checkers, model checkers, or both?}. 
+%
+%As discussed in Section~\ref{sec:intro}, two categories of non-LLM-based misconfiguration detectors have been developed and deployed: {\em consistency checkers} and {\em model checkers}. Tools in both categories can be highly effective, but have notable limitations that can be avoided with an LLM-based approach for detecting network misconfigurations.
+%
+%%Many automated tools have been developed to combat misconfigurations on routers and switches.
+%%To efficiently combat misconfigurations on routers and switches, many automated tools 
+%%such as model checkers and consistency checkers 
+%%have been developed. 
+%%Model checkers, such as Batfish~\cite{fogel2015general, batfish}, Minesweeper~\cite{beckett2017general}, and Tiramisu~\cite{abhashkumar2020tiramisu}, create logical models of network behavior to verify compliance with predefined policies. However, their reliance on manually specified algorithms and policies limits scalability \aaron{Researchers have put significant effort into scaling model checkers, and state-of-the-art tools scale reasonably well to large/complex networks. Is the scalability limitation here about the scalability of human effort, as opposed to the scalability of the tools themselves?} and adaptability~\cite{ye2020hoyan, birkner2021metha}. Consistency checkers, such as Batfish~\cite{batfish},\footnote{Batfish~\cite{batfish} can function as a model checker or a consistency checker, depending on which capabilities are invoked.} Diffy~\cite{kakarla2024diffy}, and Minerals~\cite{le2006minerals}, identify deviations from learned patterns or best practices, offering a more automated approach. However, these tools often oversimplify configurations, flagging valid variations as errors \aaron{Need statistic/citation to backup this claim.} and leading to false positives. 
+%
+%\mypara{Consistency checkers}~\cite{kakarla2024diffy,kakarla2020finding, le2006minerals, feamster2005detecting, tang2021campion, le2008detecting, le2006characterization, batfish}
+%%, such as Batfish~\cite{batfish},\footnote{Batfish~\cite{batfish} can function as a model checker or a consistency checker, depending on which capabilities are invoked.} Diffy~\cite{kakarla2024diffy}, and Minerals~\cite{le2006minerals}, 
+%%identify deviations from common patterns.
+%%\mysubpara{Advantages Over Non-LLM-Based Tools:} The unique architecture of transformer-based LLMs allows them to fundamentally surpass consistency checkers by integrating pre-trained domain knowledge with context-specific information from the configuration being analyzed, creating a much richer decision-making framework. 
+%%They rely solely on 
+%use statistics-based analyses to identify frequently occurring patterns in a network's  configurations;
+%%, and sometimes hard-coded ``best practices.'' 
+%%Consistency checkers rely solely on statistical patterns derived from historical or similar data, using majority-voting logic to flag deviations as anomalies. 
+%common patterns are assumed to be correct and all deviations are treated as errors, regardless of whether they represent valid, context-specific configurations. As a result, consistency checkers fail to account for the underlying intent of the configuration or the broader network context, often leading to false positives and missed opportunities to understand nuanced misconfigurations.
+%
+%In contrast, LLMs integrate their pre-learned understanding of common (best) practices with the specific configuration context provided in the prompt. By treating configurations as interconnected systems, they can assess whether deviations align with learned standards or represent genuine misconfigurations. For instance, while a consistency checker might flag a rare ACL rule as an anomaly, an LLM can reason that it is valid based on its relationships to routing policies or protocol directives elsewhere in the configuration.
+%
+%\mypara{Model checkers}
+%\aaron{Integrate two paragraphs below}
+%Model checkers, such as Batfish~\cite{fogel2015general, batfish}, Minesweeper~\cite{beckett2017general}, and Tiramisu~\cite{abhashkumar2020tiramisu}, create logical models of network behavior to verify compliance with predefined policies. However, their reliance on manually specified algorithms and policies limits scalability \aaron{Researchers have put significant effort into scaling model checkers, and state-of-the-art tools scale reasonably well to large/complex networks. Is the scalability limitation here about the scalability of human effort, as opposed to the scalability of the tools themselves?} and adaptability~\cite{ye2020hoyan, birkner2021metha}.
+%
+%Compared to model checkers, LLMs are fully automated, requiring no human-defined rules and dynamically adapting to new contexts, making them better suited for handling configurations involving vendor-specific nuances or unforeseen patterns. In contrast, model checkers simulate network behavior and verify compliance with predefined policies but rely heavily on the manual specification of rules, algorithms, and policies, which limits their scalability due to dependence on domain expertise. However, LLMs have certain limitations when compared to model checkers, particularly in their inability to rigorously simulate and compute precise route behaviors under specific scenarios, such as link failures or traffic balancing. While model checkers can mathematically verify properties like load balancing, LLMs rely on probabilistic reasoning and can only infer whether a configuration aligns with best practices or observed patterns. Thus, while LLMs excel in automation and contextual reasoning, they lack the exact computational guarantees offered by model checkers. The focus of this paper, however, is not to address the mathematical computational limitations of LLMs but to optimize existing LLMs for effective and scalable misconfiguration detection.
+%
+%Of course, LLM-based misconfiguration detection is not a panacea. Using LLMs requires addressing different challenges, which we discuss next, and introduces different limitations, which we discuss in Section \aaron{TODO}.
 
 \subsection{Building Context in Prompts for Accurate Misconfiguration Detection}
 \label{sec:background:context}
 
-Through this architecture and the pre-learned general network configuration
-knowledge, LLM-based Q\&A models can detect subtle errors that can emerge from
-interactions among different elements—issues frequently missed by conventional
-tools \aaron{consistency checkers, model checkers, or both?}. As networks grow more complex and interdependent, the model’s ability to
+LLMs' ability to
 holistically evaluate configurations and understand their intended functions
-makes it a valuable asset for enhancing misconfiguration detection accuracy.
-However, to realize this capability, query prompts must include all relevant
+makes LLMs a valuable asset for enhancing misconfiguration detection accuracy.
+However, to effectively leverage LLMs, query prompts must include all relevant
 context from the configuration file when analyzing particular configuration lines
 or excerpts, including associated segments that might reveal hidden
 misconfigurations. Incorporating this broader view of the file refines the
@@ -136,39 +136,39 @@ this detailed context, the LLM’s capacity to identify potential issues is
 significantly diminished~\cite{liskavets2024prompt,tian2024examining,khurana2024and,
 	shvartzshnaider2024llm}.
 
-\begin{table}
-    \centering
-    \resizebox{\columnwidth}{!}{
-    \begin{tabular}{|l|c|cccc|}
-        \hline
-        \multirow{2}{*}{\textbf{Model}} & \textbf{Context Window} & \multicolumn{4}{c|}{\textbf{Acc. at Input Len. (Tokens)~\cite{levy2024same}}} \\
-        \cline{3-6}
-         & \textbf{(Tokens)} & 250 & 1K & 2K & 3K \\
-        \hline
-        GPT-3.5~\cite{openai2022gpt35} & 4K & 0.72 & 0.64 & 0.60 & 0.59 \\
-        GPT-4o~\cite{openai2023gpt4} & 128K & 0.95 & 0.92 & 0.86 & 0.80 \\
-        Gemini Pro~\cite{google2024gemini} & 1M & 0.94 & 0.80 & 0.66 & 0.62 \\
-        Mixtral 8x7B~\cite{mistral2023mixtral} & 32K & 0.90 & 0.72 & 0.68 & 0.60 \\
-        \hline
-    \end{tabular}
-    }
-\caption{Comparison of context window sizes and accuracy degradation with increasing input/prompt length.}
-    \label{tab:context_accuracy}
-\end{table}
+%\begin{table}
+%    \centering
+%    \resizebox{0.6\columnwidth}{!}{
+%    \begin{tabular}{|l|c|cccc|}
+%        \hline
+%        \multirow{2}{*}{\textbf{Model}} & \textbf{Context Window} & \multicolumn{4}{c|}{\textbf{Acc. at Input Len. (Tokens)~\cite{levy2024same}}} \\
+%        \cline{3-6}
+%         & \textbf{(Tokens)} & 250 & 1K & 2K & 3K \\
+%        \hline
+%        GPT-3.5~\cite{openai2022gpt35} & 4K & 0.72 & 0.64 & 0.60 & 0.59 \\
+%        GPT-4o~\cite{openai2023gpt4} & 128K & 0.95 & 0.92 & 0.86 & 0.80 \\
+%        Gemini Pro~\cite{google2024gemini} & 1M & 0.94 & 0.80 & 0.66 & 0.62 \\
+%        Mixtral 8x7B~\cite{mistral2023mixtral} & 32K & 0.90 & 0.72 & 0.68 & 0.60 \\
+%        \hline
+%    \end{tabular}
+%    }
+%\caption{Comparison of context window sizes and accuracy degradation with increasing input/prompt length. \aaron{I'm not sure there is value in including this data from~\cite{levy2024same}, because it is not specific to network configurations; a citation to \cite{levy2024same} in the text seems sufficient.}}
+%    \label{tab:context_accuracy}
+%\end{table}
 
-\mypara{Limitations of Full-File Prompting:} \aaron{Reorganize this paragraph}
+\mypara{Limitations of Full-File Prompting:}
 A straightforward solution to providing extensive context is to feed the entire
-configuration file to the LLM—either as a single prompt or progressively using chain-of-thought (CoT)—and let
-the model detect potential misconfigurations. Yet, this approach is highly inefficient
-due to token-length constraints~\cite{xue2024repeat,yu2024breaking,gu2023mamba}.
-Moreover, it can trigger \emph{context overload}~\cite{lican,li2024long,qian2024long},
-where extraneous information distracts the model from the crucial lines in the file,
-leading to missed errors or false positives. Analogously, a human expert would likely
-be overwhelmed by an avalanche of irrelevant details, making it harder to pinpoint
-actual issues. Similarly, context overload diminishes the model’s ability to focus
-and raises the risk of missing important misconfigurations or erroneously flagging
-innocuous lines.
-Table~\ref{tab:context_accuracy} underscores a key insight: while LLMs with larger context windows (\eg, Gemini Pro’s 1M tokens) can process entire configuration files, accuracy degrades as input length increases. Even models with smaller windows, such as GPT-3.5 (4K tokens) and Mixtral 8x7B (32K tokens), show similar trends—accuracy drops from 250 to 3,000 tokens, with CoT offering little improvement. This issue is critical in real-world router configurations, where even moderate-sized Enterprise Edge Router files (15K–50K tokens) exceed the reliable reasoning limits of most models. Carrier-grade routers (100K–500K tokens) far surpass this threshold, making full-file prompting ineffective regardless of context size. Ultimately, the challenge is not just context length but the model’s ability to sustain accurate reasoning over large inputs, where full-file prompting—whether in one shot or iteratively—yields diminishing returns.
+configuration file to the LLM—either as a single prompt or progressively using chain-of-thought (CoT)—and let the model detect potential misconfigurations. 
+%Yet, this approach is highly inefficient due to token-length constraints~\cite{xue2024repeat,yu2024breaking,gu2023mamba}.
+%Moreover, it can trigger \emph{context overload}~\cite{lican,li2024long,qian2024long}, where extraneous information distracts the model from the crucial lines in the file, leading to missed errors or false positives. 
+However, this approach is ineffective, because it can trigger \emph{context overload}~\cite{lican,li2024long,qian2024long}, where extraneous information distracts the model from the crucial lines in the file, leading to missed errors or false positives.  
+%Similarly, context overload diminishes the model’s ability to focus and raises the risk of missing important misconfigurations or erroneously flagging innocuous lines.
+For example, the state-of-the-art GPT-4o~\cite{achiam2023gpt} and Gemini Pro~\cite{google2024gemini} models have token limits of 128K and 1M, respectively, but merely increasing the length of the input from 1K to 3K tokens causes accuracy to degrade from 0.92 to 0.80 and 0.80 to 0.62, respectively~\cite{levy2024same}.
+%Analogously, a human expert would likely be overwhelmed by an avalanche of irrelevant details, making it harder to pinpoint actual issues. 
+%Table~\ref{tab:context_accuracy} underscores a key insight: while LLMs with larger context windows (\eg, Gemini Pro’s 1M tokens) can process entire configuration files, accuracy degrades as input length increases. Even models with smaller windows, such as GPT-3.5 (4K tokens) and Mixtral 8x7B (32K tokens), show similar trends—accuracy drops from 250 to 3,000 tokens, with CoT offering little improvement. 
+This issue is critical in real-world router configurations, where even moderate-sized enterprise edge routers (15K–50K tokens) exceed the reliable reasoning limits of most models, and carrier-grade routers (100K–500K tokens) far surpass this threshold.
+%, making full-file prompting ineffective regardless of context size. 
+%Ultimately, the challenge is not just context length but the model’s ability to sustain accurate reasoning over large inputs, where full-file prompting—whether in one shot or iteratively—yields diminishing returns.
 
 \mypara{Challenges of Partition-Based Prompting:}
 A common solution to context overload has been partition-based prompting,
@@ -223,7 +223,7 @@ positives or missed misconfigurations.
 
 
 \mypara{Challenge 2---Referenceable Parameter Value Ambiguity:}
-In network configurations, parameter values have two types: \textit{pre-defined} values and \textit{user-defined} values. Pre-defined values are those that are built into the configuration language itself, such as boolean flags (True vs. False) or access control decisions (Allow vs. Deny). These values are understood by the configuration parser and typically do not require any additional definition or context within the configuration file. On the other hand, user-defined values are customizable by the network administrator and can vary widely depending on the specific requirements of the network. These include values such as IP addresses, timeout intervals, VLAN IDs, and other numeric or alphanumeric identifiers. \aaron{The distinction between pre-defined and user-defined values is confusing, because some user-defined values are further defined (e.g., VLANs) and some are not (e.g., IP addresses).} However, there rarely exists documentation explicit specifying these types and requires a lot of manual examination, which is hard to scale.
+In network configurations, parameter values have two types: \textit{pre-defined} values and \textit{user-defined} values. Pre-defined values are those that are built into the configuration language itself, such as boolean flags (True vs. False) or access control decisions (Allow vs. Deny). These values are understood by the configuration parser and typically do not require any additional definition or context within the configuration file. On the other hand, user-defined values are customizable by the network administrator and can vary widely depending on the specific requirements of the network. These include values such as IP addresses, timeout intervals, VLAN IDs, and other numeric or alphanumeric identifiers. \aaron{The distinction between pre-defined and user-defined values is confusing, because some user-defined values are further defined (\eg, VLANs) and some are not (\eg, IP addresses).} However, there rarely exists documentation explicit specifying these types and requires a lot of manual examination, which is hard to scale.
 
 When extracting context for referenceable configurations,
 failing to differentiate between pre-defined and user-defined values can introduce irrelevant or misleading information into the extracted context.

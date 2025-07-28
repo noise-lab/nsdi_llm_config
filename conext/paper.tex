@@ -1,4 +1,4 @@
-\documentclass[sigconf]{acmart}
+\documentclass[acmsmall]{acmart}
 \usepackage{tikz}
 \usepackage{amsmath}
 \usepackage{filecontents}
@@ -6,28 +6,33 @@
 \usepackage[noend]{algpseudocode}
 \usepackage{multirow}
 \usepackage{mathtools}
+\usepackage{fancyvrb}
+\usepackage{mdframed}
 \usepackage{amsthm} 
 \usepackage{microtype}
 \usepackage{paralist}
+\usepackage{graphicx}
 \usepackage{enumitem}
+\usepackage{subcaption}
 \usepackage{makecell}
 \usepackage{booktabs}
 \usepackage{wrapfig}
 \usepackage{caption}
 \usepackage{subcaption}
-\captionsetup[figure]{belowskip=0pt}
-\captionsetup[figure]{skip=0pt}
-\captionsetup[table]{belowskip=0pt}
-\captionsetup[table]{skip=0pt}
-\setlist[enumerate]{noitemsep, topsep=0pt}
-\setlist[itemize]{noitemsep, topsep=0pt}
-\usepackage[compact]{titlesec}
-\renewcommand{\paragraph}[1]{\noindent\textbf{#1}}
-\titlespacing{\paragraph}{0pt}{*0.5}{*1}
-\setlength{\textfloatsep}{5pt plus 0pt minus 2.0pt}
-\titlespacing\section{0pt}{*1.8}{*1.1}
-\titlespacing\subsection{0pt}{*1.5}{*1.1}
-\titlespacing\subsection{0pt}{*1.3}{*0.8}
+\usepackage{listings}
+% \captionsetup[figure]{belowskip=0pt}
+% \captionsetup[figure]{skip=0pt}
+% \captionsetup[table]{belowskip=0pt}
+% \captionsetup[table]{skip=0pt}
+% \setlist[enumerate]{noitemsep, topsep=0pt}
+% \setlist[itemize]{noitemsep, topsep=0pt}
+% \usepackage[compact]{titlesec}
+% \renewcommand{\paragraph}[1]{\noindent\textbf{#1}}
+% \titlespacing{\paragraph}{0pt}{*0.5}{*1}
+% \setlength{\textfloatsep}{5pt plus 0pt minus 2.0pt}
+% \titlespacing\section{0pt}{*1.8}{*1.1}
+% \titlespacing\subsection{0pt}{*1.5}{*1.1}
+% \titlespacing\subsection{0pt}{*1.3}{*0.8}
 \usepackage{booktabs}
 \renewcommand\footnotetextcopyrightpermission[1]{} % 
 \renewcommand\footnotetextcopyrightpermission[1]{} 
@@ -43,7 +48,7 @@
 	%-------------------------------------------------------------------------------
 
 
-	\title[CAIP]{CAIP: Detecting Network Device Misconfigurations with Context-Aware Iterative Prompting of LLMs}
+	\title[CAP]{CAP: Detecting Network Device Misconfigurations with Context-Aware Prompting of LLMs}
 		\author{Paper \#1257, \pageref{endOfBody} pages body, 19 pages total}
         \input{sec_abstract}
 		\newcommand{\chase}[1]{\textcolor{blue}{[#1]}}
@@ -53,7 +58,7 @@
 		\newcommand{\mypara}[1]{\vspace{0.05cm}\noindent{\bf {#1}}}
 		\newcommand{\mysubpara}[1]{\vspace{0.05cm}\noindent{\textit{#1}}}
 		\newcommand{\etal}{{\it et al.}}
-		\newcommand{\sysname}{{CAIP}}
+		\newcommand{\sysname}{{CAP}}
 		\newlength{\oldintextsep}
 		\setlength{\oldintextsep}{\intextsep}
 		\setlength\intextsep{0pt}
@@ -61,17 +66,18 @@
         		\maketitle
 
 \input{sec_intro_context_analogy}
-\input{sec_background}
+\input{sec_motivation_new}
 \input{sec_overview}
 \input{sec_mining}
 \input{sec_prompting}
-\input{sec_eval}
+\input{sec_eval_new}
 \input{sec_future}
 \input{sec_ending}
 		\label{endOfBody}
 		%-------------------------------------------------------------------------------
 		\bibliographystyle{plain}
 		\bibliography{citations}
+        \input{conext/appendix}
 
 		\normalfont % Reset to normal font after sloppy
 	

@@ -1,193 +1,238 @@
 \section{Context Mining}
 \label{mining_method}
 
-\aaron{TODO: add new opening}
-We rely on two observations:
-
-\mypara{1. Hierarchical Structure of Configuration Files:}
-
-
-As discussed in Section~\ref{sec:background:context}, configurations have a hierarchical structure, but network engineers do not read/modify configurations in a strictly top-down fashion. While the hierarchy is certainly relevant---e.g., settings for a specific interface are nested under the interface definition, and settings for other interfaces are at the same level in the hierarchy---configurations also contain non-hierarchical relationships~\cite{benson2009complexitymetrics}---e.g., one of an interface's settings may be the name of an inbound packet filter whose settings (i.e., rules) are defined in a completely different location within the hierarchy. There are no explicit structural indicators of the latter; instead, network engineers must rely on their intuition and expertise---e.g., 
-%inferring that a number listed under an interface's ``allowed-vlans'' setting relates to a specific entry within the ``vlan'' section of the configuration, and 
-knowledge that an ``access-group'' setting under an interface is a reference to packet filter settings under the ``access-list'' section of a Cisco device's configuration.
-
-The combination of hierarchical and non-hierarchical relationships within configurations makes it challenging to...\aaron{realized this reads more like a challenge than a methodology, so stopped revising here for now.}
+The foundation of \sysname{} is its context mining engine. This component is tasked with systematically identifying and extracting information that may be relevant to analyzing a specific line of configuration. The core challenge lies in the complex nature of `relevance' itself, which is not defined by mere proximity in a file. As discussed in Section~\ref{sec:motivation}, configurations contain numerous connections within and across devices. 
+% Therefore, to emulate an expert's intuition and capture the full picture of a configuration's correctness—including its local interactions, \aaron{What are ``local interactions?''} network-wide patterns, and distant dependencies—we design a mining process that is guided by configurations' hierarchical structure, relative uniformity~\cite{le2006minerals, kakarla2020finding}, and abundance of references~\cite{benson2009complexitymetrics}.
+Therefore, to emulate an expert's intuition, we design a mining process guided by configurations' hierarchical structure, relative uniformity~\cite{le2006minerals, kakarla2020finding}, and abundance of references~\cite{benson2009complexitymetrics} in order to capture the full picture of a configuration's correctness by revealing its local interactions (\ie, how settings within a single block define its behavior), its adherence to network-wide patterns (the implicit design templates), and its distant dependencies (the explicit links between a statement and its definition elsewhere).
 
 
-Configuration files are typically written in a structured, hierarchical format that can be effectively modeled as a tree, as shown in the example in Figure~\ref{fig:tree}. In this tree representation (\(T\)), each node (\(V\)) corresponds to a specific configuration element, and edges represent the relationships or dependencies between these elements. \aaron{Tree structure naturally follows from configuration structure, but only neighboring configuration is obvious to mine in the context of a tree structure.}
+\subsection{Representing configurations}
+\label{sec:mining_method:structure}
 
-Let any unique path \(
+%\begin{wrapfigure}{r}{0.5\columnwidth}
+%    \centering
+%    \fbox{\includegraphics[width=0.48\columnwidth]{figs/tree_form.png}}
+%    \caption{Example snippet of tree-formatted Juniper router configuration file. \aaron{Groups are a Juniper-specific feature; can we show a snippet of the configuration that is more common across vendors (e.g., interfaces, routing protocols, filters)?}}
+%    \label{fig:tree}
+%\end{wrapfigure}
+
+Since configurations have a structured, hierarchical format (discussed in Section~\ref{sec:motivation}), we represent each device's configuration as a tree ($T$).
+%Configurations are typically written in a structured, hierarchical format that can be effectively modeled as a tree (\(T\)), as shown in the example in Figure~\ref{fig:tree}. 
+Each node (\(V\)) corresponds to a specific 
+%configuration element, with child nodes providing further specificity.
+category (\eg, `{\tt interfaces}', `{\tt filter}'), instance (\eg, `{\tt ge-1/0/1}', `{\tt EXAMPLE-FILTER}'), or parameter (\eg, `{\tt mtu}', `{\tt input}') within the configuration.
+%and edges convey the nesting of 
+%represent the relationships/dependencies between
+%these elements.
+A complete path \(
 P = \{ \top \rightarrow V_1 \rightarrow V_2 \rightarrow \dots \rightarrow V_k = v_k \}
-\) in this tree have \(k\) nodes, where the value of \(k\) can vary depend on the path taken. The root node (\(\top\)) represents the entry point of the configuration file; it functions solely as the root of the tree, providing no semantic meaning, and remains identical regardless of the path taken. The immediate following node (\(V_1\)) corresponds to the broadest configuration category in this specific path. Intermediate nodes at subsequent levels (\( V_2, \dots, V_{k-1} \)) represent increasingly nested configuration sections or subcategories, each refining the configuration context. The leaf node \(V_k\) (or parameter node) represents the final configurable parameter in this path, with the associated value \(v_k\), \ie, parameter values, indicating the specific configuration setting. An unique configuration line is thus a complete path in the tree \aaron{confusing, because most paths are combinations of lines---e.g., interface GE1/1 > allowed vlans 123}, starting from the root node and terminating at a parameter node, where the path reflects the hierarchical structure and relationships defined in the configuration file.
-\begin{figure}[t]
-    \centering
-    \fbox{\includegraphics[width=0.9\columnwidth]{figs/tree_form.png}}
-    \caption{Example snippet of tree-formatted Junpiter router configuration file. \aaron{I think {\tt unit <*>} should be at the same level as {\tt mtu = "9192"}, not nested under {\tt mtu}.}}
-    \label{fig:tree}
-\end{figure}
+\) from the root ($\top$) to a leaf ($V_k$) represents a single, \textit{fully-qualified configuration statement} (FQCS). For example, the path listed at the top of Figure~\ref{fig:context_mine} corresponds to line 7 in Figure~\ref{fig:example_config}, where the leaf node ($V_k = v_k$) represents the configuration parameter (`{\tt input}') and its associated value (`{\tt EXAMPLE-FILTER}'), and the preceding nodes ($V_1, V_2, \dots, V_{k-1}$) represent the configuration sections the parameter is nested within (`{\tt interfaces}', `{\tt ge-0/0/1}', ..., `{\tt filter}').
 
-\mypara{2. Contextual Relevance from Different Aspects:} We observe that the context related to any given configuration line falls into one of four types, based on its position and relation within the configuration file as shown in the example in
-Figure~\ref{fig:context_mine}.
-%, with increasing levels of complexity to mine. \aaron{Preceding sentence is too long/dense.} 
-They each providing unique insights that contribute to accurate
-misconfiguration detection: 
+%Let any unique path \(
+%P = \{ \top \rightarrow V_1 \rightarrow V_2 \rightarrow \dots \rightarrow V_k = v_k \}
+%\) in this tree have \(k\) nodes. The root node (\(\top\)) represents the entry point of the configuration file. The immediate following node (\(V_1\)) corresponds to the broadest configuration category in this path. Intermediate nodes (\( V_2, \dots, V_{k-1} \)) represent increasingly nested configuration sections. Finally, the leaf node \(V_k\) represents a configurable parameter with its associated value \(v_k\). A complete path from the root to a leaf therefore represents a single, \textit{fully-qualified configuration statement} (FQCS), which may be composed of multiple hierarchical lines in the raw text (\eg, the setting `allowed vlans 123` is found within the `interface GE1/1` stanza). %
+
+
+%\subsection{Contextual Relevance from Different Aspects:} 
+\subsection{Principal configuration contexts} 
+Based on the characteristics of configurations discussed in Section~\ref{sec:motivation}, we identify three principal forms of context to extract from configurations: (1) neighboring configuration, (2) similar configuration, and (3) referenced configuration.
+We define each type of context relative to a specific FQCS ($P = \{ \top \rightarrow V_1 \rightarrow \dots \rightarrow V_k = v_k \}$) under review. As demonstrated by the examples in Figure~\ref{fig:context_mine}, each type of context provides unique insights that contribute to the evaluation of a FQCS. 
+
+
+% \begin{figure*}[t]
+%     \centering
+%     \begin{mdframed}
+%     \begin{minipage}{0.5\textwidth}
+%     \footnotesize % Dynamically scales down font
+%     \mypara{Example: Context Mining for a Specific Configuration Line}
     
-\mypara{Neighboring Configurations} are closely related to the line under examination, typically within the same section or functional block of the network configuration. For instance, if analyzing a line that defines a VLAN assignment on a particular interface, neighboring configurations would include other lines that configure the same interface or VLAN. These configurations provide insights into how related parameters are set up in proximity, revealing potential dependencies or conflicts. Additionally, by referencing related configurations that define or modify these neighboring parameters, one can understand how changes in one part of the network might impact adjacent configurations, helping to identify misconfigurations that could lead to issues like traffic misrouting or security vulnerabilities. 
+%     \textit{Configuration Line Under Review:}
+%     \begin{Verbatim}
+% groups -> INTERFACE-BACKBONE -> interfaces -> <ge-*> -> unit <*>
+% -> family inet -> filter -> input-list = "inet-sample"
+%     \end{Verbatim}
+%     \hrulefill
 
-Neighboring configurations are relatively easy to mine because they are identified based on adjacency or location in the configuration file.
-%, making them straightforward to extract.
-    
-\mypara{Similar Configurations} involve the same type of parameter or function as the configuration line under review but are applied in different contexts within the network. For example, consider configurations that assign IP addresses to different interfaces across various routers in the network. Even though the interfaces and routers may differ, the principles governing IP address assignment remain the same. By comparing these similar configurations, one can detect inconsistencies or deviations from standard practices that might indicate a misconfiguration. This type of context is essential for ensuring that configuration practices are consistent across the network, reducing the risk of errors that could lead to network outages or performance degradation. Mining these configurations is more challenging because, unlike neighboring configurations, they are not located adjacently but must be identified based on functional similarities.
+%     \mypara{Extracted Neighboring Configurations}
+%     \begin{Verbatim}
+% (a) groups -> INTERFACE-BACKBONE -> interfaces -> <ge-*> -> unit <*>
+%     -> family inet -> filter -> input-list = "backbone-in"
+% (b) groups -> INTERFACE-BACKBONE -> interfaces -> <ge-*> -> unit <*>
+%     -> family inet -> filter -> output = "interface-out"
+%     \end{Verbatim}
 
-\mypara{Referenced Configurations}
-provide essential definitions or additional information related to the
-parameter value being examined. In the network domain, this context is
-important for understanding how specific values are applied across different parts of the network configuration. For example, if a parameter value specifies an import policy, referenced configurations might include other lines where this policy is defined or where its behavior is modified. By examining these configurations, one can gain a deeper understanding of how the policy influences routing decisions or interacts with other network elements, ensuring that the configuration is applied correctly and consistently throughout the network.
-Referenced configurations are the most difficult to mine because they often involve indirect references and dependencies that are not immediately apparent, requiring a thorough and sometimes recursive analysis to trace how a value or policy is used across various parts of the configuration file.
+%     \mypara{Extracted Similar Configurations}
+%     \begin{Verbatim}
+% (a) groups -> INTERFACE-BACKBONE -> interfaces -> <ge-*> -> unit <*>
+%     -> family mpls -> filter -> input-list = "mpls-sample"
+%     \end{Verbatim}
 
-\begin{figure}[t]
+%     \mypara{Extracted Referenced Configurations}
+
+%     \mysubpara{(1) Intra-Device Reference}
+%     \begin{Verbatim}
+% (a) groups -> firewall -> family inet -> filter inet-sample -> term default
+%     -> then = sample
+% (b) groups -> firewall -> family inet -> filter inet-sample -> term default
+%     -> then = next term
+%     \end{Verbatim}
+
+%     \mysubpara{(2) Cross-Device Reference}
+%     \textit{New Example Line Under Review (on Router A, IP 10.1.2.2):}
+%     \begin{Verbatim}
+% protocols -> bgp -> group "PEERS" -> neighbor 10.1.2.3 -> description = "to-router-B"
+%     \end{Verbatim}
+%     \textit{Extracted Context (from Router B's configuration file):}
+%     \begin{Verbatim}
+% (a) protocols -> bgp -> group "PEERS" -> neighbor 10.1.2.2 -> description = "to-router-A"
+%     \end{Verbatim}
+%     \end{minipage}
+%     \end{mdframed}
+
+%     \caption{An illustration of the four types of context mined by \sysname{} for a given configuration line. The system extracts neighboring, similar, and both intra- and cross-device referenced configurations. \aaron{This needs to be updated to match the example configuration in Figure~\ref{fig:example_config}.}}
+%     \label{fig:context_mine}
+% \end{figure*}
+
+
+\begin{figure*}[t]
     \centering
-    \fbox{\includegraphics[width=0.9\columnwidth]{figs/context_mine.png}}
-    \caption{Example context mined on selected config line.}
+    \begin{mdframed}
+    \begin{minipage}{0.95\textwidth} % Using a slightly wider minipage for clarity
+    \footnotesize % Dynamically scales down font
+    
+    \mypara{Example: Context Mining Based on Figure~\ref{fig:example_config}}
+    
+    \vspace{1em}
+    \textit{Configuration Line Under Review (from line 7):}
+    \begin{Verbatim}
+interfaces -> ge-0/0/1 -> unit 0 -> family inet -> filter -> input = "EXAMPLE-FILTER"
+    \end{Verbatim}
+    \hrulefill
+
+    \mypara{Extracted Neighboring Configurations}
+    \textit{(Other settings for the same interface unit)}
+    \begin{Verbatim}
+(a) interfaces -> ge-0/0/1 -> unit 0 -> family inet -> address = "10.0.1.1/24"
+    \end{Verbatim}
+
+    \mypara{Extracted Similar Configurations}
+    \textit{(The same parameter used on a different, but similar, interface)}
+    \begin{Verbatim}
+(a) interfaces -> ge-0/0/2 -> unit 0 -> family inet -> filter -> input = "EXAMPLE-FILTER"
+    \end{Verbatim}
+
+    \mypara{Extracted Referenced Configurations}
+
+    \mysubpara{(1) Intra-Device Reference}
+    \textit{(Finding the definition of the referenced "EXAMPLE-FILTER")}
+    \begin{Verbatim}
+(a) firewall -> family inet -> filter EXAMPLE-FILTER -> term ALLOW-INTERNAL 
+    -> from -> source-address = "10.0.0.0/16"
+(b) firewall -> family inet -> filter EXAMPLE-FILTER -> term ALLOW-INTERNAL 
+    -> then -> accept
+    \end{Verbatim}
+
+    \mysubpara{(2) Cross-Device Reference}
+    \textit{(New Example Line Under Review (from line 24) on Router A (10.0.2.1)):}
+    \begin{Verbatim}
+protocols -> bgp -> group "EBGP-PEER" -> neighbor = "10.0.2.2"
+    \end{Verbatim}
+    \textit{Extracted Context (from peer Router B's configuration file):}
+    \begin{Verbatim}
+(a) protocols -> bgp -> group "EBGP-PEER" -> neighbor = "10.0.2.1"
+    \end{Verbatim}
+    
+    \end{minipage}
+    \end{mdframed}
+
+    \caption{An illustration of the types of context mined by \sysname{}, with concrete examples drawn from the sample configuration in Figure~\ref{fig:example_config}. The system extracts neighboring, similar, and both intra- and cross-device referenced configurations.}
     \label{fig:context_mine}
-\end{figure}
+\end{figure*}
 
-\aaron{It feels repetitive to discuss each type of context, then formally define each type of context. Consider merging the description/motivation for each context (above) and the formal definition for each each context (below).}
-
-Given the categorization of relevant contexts and the hierarchical tree model, we can automate the process of mining the aforementioned contexts by translating them into specific paths within the tree. This involves the following steps:
-
-\mysubpara{Neighboring Configuration Mining:}
-    Following the hierarchical tree structure of the configuration file, we can model the entire configuration as a tree \( T \) with nodes representing configuration elements and edges depicting the relationships between them. The root node \(V_1\) represents the entry point of the configuration file and the \(V_2\) nodes represent the broadest configuration categories.
-    For a given configuration path \( P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \} \) within the tree, where \( v_k(P) \) is the parameter value assigned to the parameter node \( V_k(P) \), the goal of neighboring configuration mining is to extract other paths in the tree that share a common sub-path with \( P \) up to a certain depth. 
-    
-    The common ancestry level, or shared node depth, can be adjusted to control how much context is mined. Let us define \( m \) as the number of shared nodes from the root, then neighboring configurations are defined as:
-\begin{multline*}
-N_m(P) = \{ P' \in T \mid P' = V_1 \rightarrow  V_2(P')\dots \rightarrow V_m(P') \rightarrow \\ V_{m+1}(P') \rightarrow \dots \rightarrow V_k(P')= v_k(P') \},
-\end{multline*}
-
-where \( P' \) shares the first \( m \) nodes with \( P \), but the nodes following \( V_m(P') \) (denoted as \( V_{m+1}(P'), V_{m+2}(P'), \dots \)) can differ from the remaining nodes in \( P \), and 
-\(P'\) does not end at the same parameter node as \(P\), \ie, \( V_k(P') \neq V_k(P) \).
-\aaron{The formal definition above (in the multline) does not convey the meaning expressed in the preceding description, because the formal definition does not include an explicit relationship between $V_2(P')$ and $V_2(P)$, $V_3(P')$ and $V_3(P)$, etc.}
+\mypara{Neighboring configurations ($N_m(P)$):}
+% Neighboring configurations are lines that are structurally close to the FQCS under review, typically within the same functional block. They provide immediate, local context, revealing potential dependencies or conflicts. \aaron{It's a little confusing to talk about dependencies and conflicts here, because dependencies seems more connected to referenced configurations and conflicts seems more connected to similar configurations. Is there another way we can motivate neighboring configurations?} For instance, when analyzing an IP address on an interface, other settings for that same interface (like its MTU or ACLs) are crucial neighboring context.
+Neighboring configurations are lines that are structurally close to the FQCS under review, typically within the same functional block. They provide the immediate, local context necessary to understand the holistic state and intended behavior of a specific entity, such as an interface or routing protocol. For instance, when analyzing an IP address on an interface, its neighboring context—such as whether the interface is administratively shut down, its assigned MTU, or the access lists applied to it—is crucial for correctly interpreting the operational impact of that IP address.
 
 
-
-
-Adjusting \( m \) allows for control over the size and relevance of the neighboring context.
-A common choice is to set \(V_m(P) = V_m(P') = V_{k-1}(P) \), \aaron{Can we just say a common choice is to set $m = k-1$ instead of defining equality between the vertices?} which captures sufficient context while avoiding unnecessary complexity. For example. let the configuration path under review be represented as
+Formally, we define neighboring configurations as the set of paths $P'$ that share a common ancestry with $P$ up to a certain depth, $m$. Let $V_i(P)$ be the $i$-th node in path $P$. The set of neighboring paths is:
 \[
-P = \{V_1 \rightarrow A \rightarrow B \rightarrow C \rightarrow D = v_D \} \mid V_{k-1}(P) = C
+N_m(P) = \{ P' \in T \mid V_i(P') = V_i(P) \text{ for } 1 \le i \le m, \text{ and } P' \neq P \}
 \]
-The set of neighboring paths \( N(P) \) can be defined as:
+%This corrected definition ensures the shared nodes are identical. 
+
+The depth parameter $m$ controls the scope of the context. A larger $m$ results in a tighter, more relevant neighborhood.
+%\textit{Design Justification:} 
+A simple and effective choice is to set $m = k-1$, meaning we extract all sibling configurations that share the same direct parent. This captures the most immediate context without including potentially irrelevant data from higher up in the hierarchy. While we use this default for our evaluation, we acknowledge that a full study on the impact of different values of $m$ is a valuable area for future work.
+
+\mypara{Similar configurations ($S(P)$):}
+Similar configurations involve the same type of parameter but applied in slightly different contexts (\eg, the MTU settings on all other interfaces across the network). Comparing these helps detect inconsistencies or deviations from standard practices---which, as discussed in Section~\ref{sec:motivation:llms}, may or may not be intentional.
+
+% Formally, we define similar configurations as the set of paths $P'$ that share the same broadest category node ($V_1$) and the same final parameter node ($V_k$), but differ in their intermediate nodes.
+% \[
+% S(P) = \{ P' \in T \mid V_1(P')=V_1(P), V_k(P')=V_k(P), P' \neq P \}
+% \]
+% For example, this allows us to find all `MTU' settings ($V_k$) under the `interfaces' category ($V_1$) across the entire device.
+
+% We require a match up to the $V_1$ node because it typically represents a major functional block (like `interfaces' or `routing-policies'). This provides a meaningful balance; matching only on the root node ($\top$) would be too broad, while requiring deeper matches (like $V_2$) would be too restrictive and might miss relevant comparisons across different sub-sections. \aaron{Should we include an example of why these alternatives would be too broad or restrictive: e.g., finding similar uses of the `action' parameter under $\top$ would include both route filters and packet filters, while matching by a specific interface would find no similar configurations?} \aaron{Should we include a depth parameter in $S(P)$ similar to $N_m(P)$? As a motivating example: `routing' is a $V_1$ node in Juniper router configurations, with specific protocols (`bgp`, `ospf`) as $V_2$ nodes;  it seems odd to compare BGP settings with OSPF settings, which occur when only matching on $V_1$. At the same time, it is unlikely that there will be overlap in $V_K$ between BGP and OSPF settings, so maybe this flexibility is irrelevant. Should we be conducting some empirical analysis of configuration languages to motivate the choice of matching only on $V_1$?}
+
+
+To provide flexibility, we define similar configurations using a shared ancestry depth, $m$, similar to our approach for neighboring configurations. Formally, we define the set of similar paths as those that share the same ancestry up to depth $m$ and terminate with the same parameter node ($V_k$), but differ in the path between $m$ and $k$.
 \[
-N(P) = \{ P' \in T \mid P' = V_1 \rightarrow A \rightarrow B \rightarrow C \rightarrow D' = v_{D'}, D' \neq D \}
+S_m(P) = \{ P' \in T \mid V_i(P')=V_i(P) \text{ for } 1 \le i \le m, V_k(P')=V_k(P), \text{ and } P' \neq P \}
 \]
-For example, consider a configuration line that defines the IP address for a particular interface:
-\begin{multline*}
-P = \{V_1 \rightarrow \text{interfaces} \rightarrow \text{ge-0/0/0} 
-\rightarrow \text{unit 0} \rightarrow \text{family inet}\\
-\rightarrow \text{address} = 192.168.1.1/24 \}
-\end{multline*}
-Here, \(V_{k-1}(P)\) would be \( \text{`family inet'} \). Neighboring paths in this case might include:
-\begin{multline*}
-N(P) = \{V_1 \rightarrow \text{interfaces} \rightarrow \text{ge-0/0/0}
-\rightarrow \text{unit 0} \rightarrow
-\text{family}\\ \text{inet} \rightarrow \text{mtu} = 1500 \}
-\end{multline*}
-This ensures the extracted neighboring paths are closely relevant, revealing how related parameters are configured in the same section without overwhelming the system with excessive data. Thus, in our evaluation of \sysname{}, we select \(V_{k-1}(P)\) as  \( V_m(P) \) for an effective balance between relevance and computational efficiency.
-\aaron{We should evaluate the impact of different values of $m$.}
 
-% \paragraph{Similar Configuration Mining:} To identify similar configurations, we locate paths that share the same entry point root node, the broadest category node (\(V_1\) and \(V_2\)), and parameter node (\(V_k\)) but vary in their intermediate nodes or parameter values. Let us again have \( P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \} \) to represent a configuration line under review.
-% Given \( P \), the set of similar configuration paths \( S(P) \) can be defined as:
-% \begin{multline*}
-% S(P) = \{ P' : P' = \{ V_1 \rightarrow V_2(P') \rightarrow V_3(P') \rightarrow \dots \rightarrow V_k(P') \\= v_k((P')) \} \},
-% \end{multline*}
-% where \( P' \) has \(V_2(P') = V_2(P)\) and \(V_k(P') = V_k(P)\), but can have any number of intermediate nodes (\( V_3(P'), V_4(P'), \dots \)) that differ from the intermediate nodes in \( P \), as well as possibly differing parameter value \( v_k(P') \) that does not equal to \( v_k(P) \).
-% % The reason we use the \( L_1 \) node \( A \) rather than the root node \( V_0 \) is that the \( L_1 \) node represents the broad configuration category or section under which the parameter node \( D \) exists. 
-% We make sure that any path \(P'\) in \(S(P)\) has \(V_2(P') = V_2(P)\) to 
-% % By focusing on the same \( L_1 \) node, we 
-% ensure that we are comparing similar types of configurations within the same category or context, even though the specific paths leading to \( V_k(P') \) and  \( V_k(P) \) may vary. Using only identical root node \( V_1 \) would not provide meaningful differentiation, as it encompasses the entire configuration file, making it too general for this analysis. By comparing these variations, we can understand how the same type of parameter is configured, which is essential for ensuring consistency across the network configuration.
+The choice of the depth parameter $m$ allows for a crucial trade-off between the breadth and relevance of the comparison. Our default choice is to set $m=1$, which typically represents a major functional block (like `interfaces' or `protocols'). This provides a meaningful balance, which can be illustrated by considering the alternatives:
+\begin{itemize}
+    \item A choice of $m=0$ (matching only on the root node $\top$) would be too broad. For example, searching for a parameter like `action' would incorrectly group together firewall filter actions and route policy actions, which are semantically very different.
+    \item A choice of $m$ that is too high (\eg, $m = k-2$, matching on a specific interface like `ge-0/0/1') would be too restrictive. A search for similar MTU settings would find no configurations on other interfaces, defeating the purpose of the comparison.
+\end{itemize}
 
-\mysubpara{Similar Configuration Mining:} To identify similar configurations, we focus on paths that share the same root node (\(V_1\)), broadest category node (\(V_2\)), and parameter node (\(V_k\)), but differ in their intermediate nodes or parameter values. \aaron{Why only require $V_2$ to match? Why not also $V_3$?} Let \( P = \{ V_1 \rightarrow V_2(P) \rightarrow V_3(P) \rightarrow \dots \rightarrow V_k(P) = v_k(P) \} \) represent the configuration line under review again.
-The set of similar configuration paths \( S(P) \) is defined as:
-\begin{multline*}
-S(P) = \{ P' : P' = \{ V_1 \rightarrow V_2(P') \rightarrow \dots \rightarrow V_k(P') = v_k(P') \} \},
-\end{multline*}
-where \( P' \) shares \(V_2(P') = V_2(P)\) and \(V_k(P') = V_k(P)\), but may have different intermediate nodes (\( V_3(P'), V_4(P'), \dots \)) and a different parameter value \( v_k(P') \).
-
-By ensuring \(V_2(P') = V_2(P)\), we compare configurations within the same category or context, even if the paths leading to \( V_k(P') \) and \( V_k(P) \) differ. Using only the root node \( V_1 \) would be too broad, as it encompasses the entire configuration file and does not provide meaningful differentiation. This approach allows us to understand how the same type of parameter is configured across different instances, which is crucial for ensuring consistency in network configurations.
+The flexibility of $m$ also helps manage comparisons within large functional blocks. For instance, in a Juniper configuration, `protocols' is a $V_1$ node containing specific protocols like `bgp' and `ospf' as $V_2$ nodes. Our default of $m=1$ would compare settings across BGP and OSPF. This may seem odd, but in practice, the final parameter names ($V_k$) are typically distinct between protocols, so irrelevant comparisons are rare. However, for a more targeted analysis, a user could set $m=2$ to find similar settings only within BGP or within OSPF. While our default provides a reasonable starting point, to suit different analysis cases, \sysname{} supports the flexibility to choose optimal default values for $m$ for different parameter types.
 
 
 
-For example, let the configuration path under review be:
+\mypara{Referenced Configurations (Intra- and Cross-Device):}
+Referenced configurations provide the definitions for user-defined identifiers --- custom labels created by an administrator to name a specific object or policy, such as an access-list name, a policy-map, or a BGP peer group. Referenced configurations are the stanzas that provide the actual definitions for these identifiers. Mining this context is crucial for understanding dependencies, but the nature of these references can be either internal to a single device's configuration or external, pointing to another device on the network. \sysname{} is designed to handle both.
+
+\mysubpara{1. Intra-Device Referencing:}
+This is the most common form, where a value in one part of a configuration refers to a policy or object defined elsewhere in the same file. For example, a line like `import-policy = PolicyX` is a reference. To resolve this, the context mining engine searches for the stanza where `PolicyX` is defined, such as the `policy-options $\rightarrow$ policy-statement PolicyX $\rightarrow$ ...' block, which contains the actual rules for that policy.
+
+Formally, for a given path $P$ in a device's configuration tree $T$, we define this set of intra-device references, $R_{intra}(P)$, as the set of paths $P'$ where the value of the original path, $v_k(P)$, appears as an intermediate node.
 \[
-P = \{ V_1 \rightarrow \text{Interfaces} \rightarrow \text{Ethernet0} \rightarrow \text{IP} \rightarrow \text{MTU} = 1500 \}
+R_{intra}(P) = \{ P' \in T \mid P' =  \top \rightarrow \dots \rightarrow v_k(P) \rightarrow \dots \rightarrow V_j = v_j \}
 \]
-This represents the configuration for setting the Maximum Transmission Unit (MTU) to 1500 on interface Ethernet0.
-A similar configuration \( P' \) could be:
+Here, $v_k(P)$ is no longer a leaf node but part of the path in $P'$, indicating that it is being defined or elaborated upon.
+
+
+% \mypara{Differentiating Pre-defined Keywords from User-defined Identifiers:} \aaron{Still need to refine and integrate this part}
+
+A primary challenge in extracting intra-device referenceable configurations is the risk of incorporating irrelevant context. This risk stems from the difficulty of distinguishing between \textit{pre-defined parameter values} and \textit{custom user-defined parameter values}.
+Pre-defined keywords are part of the vendor's standard configuration language and have a fixed, universal meaning (\eg, the boolean values `true' and `false', interface modes like `trunk' or `access', or protocol names like `any' or `ospf'). In contrast, user-defined identifiers are custom labels created by an administrator to name a specific object or policy (\eg, a policy map name like `QOS-VOIP-POLICY', an access list name such as `BLOCK\_GUEST\_ACCESS', or a VLAN ID like `1000'). This distinction is critical because it dictates our context-mining strategy: a user-defined identifier acts as a pointer, implying that its full definition exists elsewhere in the configuration and \textit{must} be retrieved. 
+Misidentifying a custom policy name as a pre-defined keyword would prevent the system from searching for its essential definition, likely causing it to miss critical dependency-related errors. Conversely, mistakenly treating a standard keyword like `true' as user-defined would trigger a pointless and computationally expensive search for a non-existent or mismatched definition.
+
+
+
+To solve this, we initially considered a simple heuristic based on existence checks in the configuration's hierarchical tree structure. This method assumed that any parameter value that also appeared as a parent or intermediate node elsewhere in the configuration must be user-defined. However, this approach proved brittle, as it could be fooled by coincidences in naming and lacked a true understanding of the configuration's grammar. We then explored a more advanced majority-voting mechanism, which attempted to enforce consistency by assuming that a given parameter type (like `timeout') should always take the same class of value (pre-defined or user-defined). This, too, had a critical flaw: it could not distinguish between identical parameter values used in different contexts. For example, it would struggle to differentiate between the user-defined `vlan-id 1000' and the user-defined `access-list 1000', as it would incorrectly try to enforce a uniform classification on the value `1000' based on its other uses, imposing a false consistency.
+
+
+Therefore, \sysname{}'s final design discards these rule-based heuristics in favor of a more direct and robust \textit{LLM-based approach}. As part of its initial query, our framework explicitly instructs the LLM to classify the value not in isolation, but \textit{in the context of the full configuration line it appears in}. By leveraging its vast training on vendor-specific documentation and millions of real-world configuration examples, the LLM has learned the expected syntax and value patterns for different configuration parameters. It understands that the value following a parameter like `vlan-id' is a user-created label, while the value following a command like `ip routing' is a pre-defined boolean keyword. This allows it to easily and accurately determine that `1000' is a distinct, user-defined identifier in the context of a VLAN versus an ACL, correctly handling the ambiguity that plagued the previous methods. This approach requires no complex, hand-crafted rules and has proven to be significantly more accurate and reliable.
+
+\mysubpara{2. Cross-Device Referencing:}
+A more complex challenge arises when a user-defined identifier refers to another device on the network. This is common in configurations for routing protocols, VPNs, or services. For example, in a BGP configuration, the line `neighbor 10.1.1.2 remote-as 65001' contains an identifier, `10.1.1.2', for a peer router. The most critical context for verifying this line is not on the current device, but on the device at `10.1.1.2'.
+
+Our methodology for this is a three-step process:
+\begin{enumerate}
+    \item \textbf{Identify External Reference:} The system first identifies that a value (like an IP address or hostname) is an identifier for an external device.
+    \item \textbf{Locate Target Device:} It then looks up the corresponding configuration file for that target device from our set of network-wide configurations.
+    \item \textbf{Find Reciprocal Configuration:} Finally, it searches within the target device's configuration for lines that reference the \textit{original} device back. For the BGP example, if our original device's IP is `10.1.1.1`, the system would search the configuration of `10.1.1.2` for the corresponding `neighbor 10.1.1.1 ...` statement.
+\end{enumerate}
+
+Formally, let the current device's configuration tree be $T_A$ and its network identifier be $id(T_A)$. If the value $v_k(P)$ in a path $P \in T_A$ is an identifier for another device with configuration tree $T_B$, the set of cross-device references, $R_{cross}(P)$, is defined as:
 \[
-P' = \{ V_1 \rightarrow \text{Interfaces} \rightarrow \text{Ethernet1} \rightarrow \text{IP} \rightarrow \text{MTU} = 9000 \}
+R_{cross}(P) = \{ P' \in T_B \mid id(T_A) \in P' \}
 \]
-In this case, \( P' \) shares the same broad configuration category `Interfaces' (\( V_2(P') = V_2(P) \)) and parameter node `MTU' (\( V_k(P') = V_k(P) \)), but differs in the intermediate node `Ethernet1' and the parameter value (9000 vs. 1500). By comparing similar configurations, the context reveals not only the MTU settings but also the intermediate configuration elements leading to the MTU setting across different interfaces within the network configuration.
+This captures all configuration statements on the target device that mention the original device. This process is essential for verifying connectivity and detecting symmetric misconfigurations where, for example, a session is configured on one side but not the other.
+The complete set of referenced configurations, $R(P)$, encompasses both intra-device definitions found within the same configuration file and cross-device configurations located on a target device that refer back to the original device.
 
-
-\mysubpara{Referenceable Configuration Mining:} In the hierarchical tree structure, referenceable configurations are identified by locating paths where the parameter value of the current line under review appears as an intermediate node in other paths. This context is crucial for understanding how specific parameter values or policies are further referenced, elaborated upon, or applied in other parts of the configuration. we can formalize this set of referenceable configuration paths as:
-\[
-R(P) = \{ P' : P' =  V_1 \rightarrow \dots \rightarrow v_k(P) \rightarrow \dots \rightarrow V_k(P') \} = v_k(P').
-\]
-In these paths, \( v_k(P) \) is no longer a parameter value, but an intermediate node, meaning it is being referenced or defined further down the configuration hierarchy.
-
-For example, suppose the current configuration line is:
-\(V_1 \rightarrow RouterA \rightarrow Policy \rightarrow ImportPolicy = PolicyX\), a referenceable path might be:
-\(
-V_1 \rightarrow  RouterA \rightarrow Policy \rightarrow PolicyX \rightarrow Filter = AllowAll
-\),
-indicating that \( PolicyX \) is further applied or modified by the filter configuration. Referenceable configuration mining helps to understand not only how a particular configuration value is defined, but also how it interacts with or influences other components of the network. This process is essential for detecting misconfigurations that arise from improper application or dependency handling across different sections of the configuration file.
-
-
-% By structuring the context mining process in this manner, we can efficiently and accurately extract the most relevant information for any given configuration line, enhancing the performance and accuracy of LLM-based configuration verification tools. This approach ensures that the LLM receives a well-curated set of contextually relevant data, improving its ability to detect sophisticated misconfigurations that depend on a comprehensive understanding of the configuration file.
-
-One of the most important problems in extracting referenceable configurations
-is the risk of incorporating irrelevant context, particularly because the
-process does not distinguish between pre-defined parameter values inherent to the configuration language and custom values defined by network administrators. 
-% This lack of distinction can lead to incorrect or unnecessary context being extracted, as the system may treat a built-in parameter value the same as a user-defined one, resulting in inaccurate or misleading insights. 
-We now proceed to discuss this problem in more detail and present our solution.
-
-\mypara{Existence and Majority-Voting Based Differentiation:} \aaron{Do we do any of this anymore, or do we just ask the LLM?}
-To accurately differentiate between pre-defined and user-defined parameter values within configuration files, we propose a solution that combines existence checks within the configuration tree and a majority-voting mechanism.
-
-\mysubpara{1. Existence-Based Differentiation:}
-User-defined values often carry contextual information \aaron{What does it mean to ``carry contextual information''?} and are typically associated with further definitions or explanations elsewhere in the configuration file. For example, if a parameter value represents a specific, customized import policy, the configuration should contain other lines that elaborate on this policy's behavior. In the hierarchical tree model, if a parameter value is user-defined, it is likely to \aaron{If we clarify the distinction between user-defined and pre-defined values, then I think ``likely to'' can be changed to ``must''.} appear as an intermediate node in other configuration paths, indicating that it is referenced or elaborated upon elsewhere. Conversely, if no such paths exist, the value is likely pre-defined and requires no additional context. Consider the parameter RoutingPolicy with a value of ImportPolicy1 as an example. If ImportPolicy1 appears as an intermediate node in other configuration lines, such as those defining specific route maps or filters, it is likely user-defined. On the other hand, a parameter value like `PassiveInterface = True' might not have any additional references, indicating that True is a pre-defined value.
-
-Formal Definitions:
-Let \( \text{Val}_{\text{user}} \) be the set of user-defined values, and \( \text{Val}_{\text{pre}} \) be the set of pre-defined values.
-A parameter value \( v_k \) is considered \textit{user-defined} if it appears as an intermediate node in at least one other configuration path \( P' \in T \). This can be expressed as:
-\begin{multline*}
-v_k \in \text{Val}_{\text{user}} \iff \exists P' = \{ V_1 \rightarrow \dots \rightarrow v_k \dots \rightarrow V_k(P') \\ = v_k(P') \} \in T
-\end{multline*}
-
-A parameter value \( v_k \) is considered \textit{pre-defined} if it does not appear as an intermediate node in any other configuration path \( P' \in T \). This can be formalized as:
-\begin{multline*}
-v_k \in \text{Val}_{\text{pre}} \iff \nexists P' = \{ V_1 \rightarrow \dots \rightarrow v_k \dots \rightarrow V_k(P') \\ = v_k(P') \} \in T
-\end{multline*}
-
-
-% There are edge cases where this approach is less applicable. Some parameter values, such as numeric ranges or flexible inputs, may not have explicit definitions within the configuration. However, these are generally treated as pre-defined since they are standardized and do not require further explanation.
-
-
-\mysubpara{2. Majority-Voting for Consistency:} A shortcoming with existence-based differentiation is that the same parameter value can be user-defined in one context and pre-defined in another. For instance, the value 1000 used in a timeout setting might be pre-defined and require no further explanation. However, the same value 1000 used as a policy name or group identifier could be user-defined and require contextual elaboration. This distinction is crucial, as identical values can have different meanings depending on the associated configuration parameter. To address this ambiguity, we avoid assigning a universal type to a parameter value across all configurations. Instead, we determine whether a value is pre-defined or user-defined based on the specific combination of the configuration parameter and its associated value. For each configuration parameter, we analyze all associated values. If the majority of these values are user-defined, we classify the entire parameter (\(V_k\)) as well as all of its possible values (\(v_k\)) as user-defined. Conversely, if the majority are pre-defined, the parameter is classified accordingly. This approach leverages the principle that configuration parameters should exhibit uniformity in the type of values they accept, maintaining consistency across the configuration.
-
-This further transforms our previous definition of \( \text{Val}_{\text{user}} \)  and \( \text{Val}_{\text{pre}} \)  into:
-\[
-(V_k, v_k) = 
-\begin{cases} 
-\text{User-Defined}, \text{if } \sum_{i=1}^{n} \mathbb{1}(v_i \in \text{Val}_{\text{user}}) > \frac{n}{2}, \\
-\text{Pre-Defined}, \text{if } \sum_{i=1}^{n} \mathbb{1}(v_i \in \text{Val}_{\text{pre}}) \geq \frac{n}{2}.
-\end{cases}
-\]
-where \( n \) is the number of unique values associated with the configuration parameter \( V_k \), and \( \mathbb{1} \) is the indicator function that checks whether a value is user-defined or pre-defined.
-
-
-Example: For the parameter Timeout, where values like 1000, 2000, and 3000 are used, if the majority lack associated definitions, they are treated as pre-defined. Conversely, for a parameter like ImportPolicy, where values such as PolicyA, PolicyB, and 1000 (as a policy name) are used, if most have contextual definitions, all values under that parameter are treated as user-defined. \aaron{How do we differentiate between user-defined VLAN 1000 and user-defined ACL 1000?}
-
-
-By combining existence-based checks with a majority-voting mechanism, we can effectively differentiate between pre-defined and user-defined parameter values in network configurations. This method ensures that the context extracted for LLM analysis is both relevant and accurate, thereby enhancing performance and reducing computational costs. Moreover, this approach maintains consistency within the configuration, ensuring that similar parameters are uniformly treated across different contexts.
+\mypara{Composable Context Primitives:}
+It is important to note that the three principal context types---Neighboring, Similar, and Referenced---serve as atomic building blocks, or \textit{primitives}. A key strength of our framework is the ability to compose these primitives to form more complex and powerful context queries. For example, we can compose S(R(P)), which translates to finding configurations that are \textit{similar} to the \textit{definition} of a value in the line under review. Conversely, a composition of R(S(P)) would find the \textit{definitions} of values that appear in \textit{similar} configurations. This compositional nature, which also allows for queries like R(N(P)) (the definitions of values in neighboring lines), gives \sysname{} the flexibility to emulate the multi-step, intuitive reasoning of a human expert.
